@@ -171,3 +171,42 @@
     font-family: var(--font-body);
   }
 }
+
+/* Price change animations */
+@keyframes price-pulse-up {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.05); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes price-pulse-down {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.05); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flash-green {
+  0% { background-color: transparent; }
+  20% { background-color: hsla(145, 60%, 45%, 0.3); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: transparent; }
+  20% { background-color: hsla(0, 70%, 55%, 0.3); }
+  100% { background-color: transparent; }
+}
+
+.price-animate-up {
+  animation: price-pulse-up 0.5s ease-out, flash-green 2.5s ease-out;
+  color: hsl(145, 60%, 45%) !important;
+}
+
+.price-animate-down {
+  animation: price-pulse-down 0.5s ease-out, flash-red 2.5s ease-out;
+  color: hsl(0, 70%, 55%) !important;
+}
