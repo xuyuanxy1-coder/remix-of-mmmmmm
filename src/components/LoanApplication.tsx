@@ -1,26 +1,23 @@
 import { useState } from 'react';
-import { useLoan } from '@/contexts/LoanContext';
+import { useLoan, MIN_LOAN_AMOUNT, MAX_LOAN_AMOUNT } from '@/contexts/LoanContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Coins, Clock, Info } from 'lucide-react';
+import { Coins, Clock, Info, Shield } from 'lucide-react';
 
 const currencies = [
-  { symbol: 'USDT', name: 'Tether', maxLoan: 50000 },
-  { symbol: 'BTC', name: 'Bitcoin', maxLoan: 2 },
-  { symbol: 'ETH', name: 'Ethereum', maxLoan: 20 },
-  { symbol: 'BNB', name: 'BNB', maxLoan: 100 },
-  { symbol: 'SOL', name: 'Solana', maxLoan: 500 },
+  { symbol: 'USDT', name: 'Tether' },
 ];
 
 const LoanApplication = () => {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USDT');
+  const [guarantorId, setGuarantorId] = useState('');
+  const [hasGuarantor, setHasGuarantor] = useState(false);
   const { applyLoan, loans } = useLoan();
 
-  const selectedCurrency = currencies.find(c => c.symbol === currency);
   const activeLoans = loans.filter(l => l.status === 'active');
 
   const handleApply = () => {
@@ -31,8 +28,18 @@ const LoanApplication = () => {
       return;
     }
 
-    if (selectedCurrency && loanAmount > selectedCurrency.maxLoan) {
-      toast.error(`Maximum loan for ${currency} is ${selectedCurrency.maxLoan}`);
+    if (loanAmount < MIN_LOAN_AMOUNT) {
+      toast.error(`Minimum loan amount is ${MIN_LOAN_AMOUNT.toLocaleString()} ${currency}`);
+      return;
+    }
+
+    if (loanAmount > MAX_LOAN_AMOUNT) {
+      toast.error(`Maximum loan amount is ${MAX_LOAN_AMOUNT.toLocaleString()} ${currency}`);
+      return;
+    }
+
+    if (hasGuarantor && !guarantorId.trim()) {
+      toast.error('Please enter guarantor ID');
       return;
     }
 
@@ -41,10 +48,12 @@ const LoanApplication = () => {
       return;
     }
 
-    const success = applyLoan(loanAmount, currency);
+    const success = applyLoan(loanAmount, currency, hasGuarantor ? guarantorId.trim() : undefined);
     if (success) {
-      toast.success(`Successfully borrowed ${loanAmount} ${currency}`);
+      toast.success(`Successfully borrowed ${loanAmount.toLocaleString()} ${currency}`);
       setAmount('');
+      setGuarantorId('');
+      setHasGuarantor(false);
     } else {
       toast.error('Failed to process loan');
     }
@@ -84,34 +93,66 @@ const LoanApplication = () => {
           <div className="relative">
             <Input
               type="number"
-              placeholder="0.00"
+              placeholder={`${MIN_LOAN_AMOUNT.toLocaleString()} - ${MAX_LOAN_AMOUNT.toLocaleString()}`}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="pr-16"
+              min={MIN_LOAN_AMOUNT}
+              max={MAX_LOAN_AMOUNT}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
               {currency}
             </span>
           </div>
-          {selectedCurrency && (
-            <p className="text-xs text-muted-foreground">
-              Max: {selectedCurrency.maxLoan.toLocaleString()} {currency}
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Min: {MIN_LOAN_AMOUNT.toLocaleString()} | Max: {MAX_LOAN_AMOUNT.toLocaleString()} {currency}
+          </p>
         </div>
 
         {/* Quick Amount Buttons */}
         <div className="grid grid-cols-4 gap-2">
-          {selectedCurrency && [0.25, 0.5, 0.75, 1].map((ratio) => (
+          {[5000, 20000, 50000, 100000].map((val) => (
             <Button
-              key={ratio}
+              key={val}
               variant="outline"
               size="sm"
-              onClick={() => setAmount((selectedCurrency.maxLoan * ratio).toString())}
+              onClick={() => setAmount(val.toString())}
             >
-              {ratio * 100}%
+              {val >= 1000 ? `${val / 1000}K` : val}
             </Button>
           ))}
+        </div>
+
+        {/* Guarantor Section */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="hasGuarantor"
+              checked={hasGuarantor}
+              onChange={(e) => setHasGuarantor(e.target.checked)}
+              className="rounded border-border"
+            />
+            <Label htmlFor="hasGuarantor" className="cursor-pointer flex items-center gap-2">
+              <Shield className="w-4 h-4 text-green-500" />
+              Secured Loan (with Guarantor)
+            </Label>
+          </div>
+          
+          {hasGuarantor && (
+            <div className="space-y-2 pl-6">
+              <Label>Guarantor ID</Label>
+              <Input
+                type="text"
+                placeholder="Enter guarantor's wallet ID"
+                value={guarantorId}
+                onChange={(e) => setGuarantorId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                The guarantor will be responsible if you fail to repay
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Loan Info */}
@@ -146,7 +187,7 @@ const LoanApplication = () => {
           onClick={handleApply}
           disabled={activeLoans.length >= 3}
         >
-          Apply for Loan
+          {hasGuarantor ? 'Apply for Secured Loan' : 'Apply for Loan'}
         </Button>
       </div>
     </div>

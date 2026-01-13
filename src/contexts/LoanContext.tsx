@@ -6,15 +6,23 @@ export interface Loan {
   amount: number;
   currency: string;
   borrowDate: Date;
+  repaidDate?: Date;
   status: 'active' | 'overdue' | 'paid';
+  guarantorId?: string;
+  interestPaid?: number;
+  penaltyPaid?: number;
 }
 
 interface LoanContextType {
   loans: Loan[];
-  applyLoan: (amount: number, currency: string) => boolean;
+  applyLoan: (amount: number, currency: string, guarantorId?: string) => boolean;
   repayLoan: (loanId: string) => boolean;
   calculateOwed: (loan: Loan) => { principal: number; interest: number; penalty: number; total: number; daysElapsed: number };
+  loanHistory: Loan[];
 }
+
+export const MIN_LOAN_AMOUNT = 5000;
+export const MAX_LOAN_AMOUNT = 100000;
 
 const LoanContext = createContext<LoanContextType | undefined>(undefined);
 
@@ -50,15 +58,16 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const applyLoan = (amount: number, currency: string): boolean => {
-    if (amount <= 0) return false;
+  const applyLoan = (amount: number, currency: string, guarantorId?: string): boolean => {
+    if (amount < MIN_LOAN_AMOUNT || amount > MAX_LOAN_AMOUNT) return false;
     
     const newLoan: Loan = {
       id: Date.now().toString(),
       amount,
       currency,
       borrowDate: new Date(),
-      status: 'active'
+      status: 'active',
+      guarantorId: guarantorId || undefined
     };
 
     setLoans(prev => [...prev, newLoan]);
@@ -70,20 +79,30 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
     const loan = loans.find(l => l.id === loanId);
     if (!loan) return false;
 
-    const { total } = calculateOwed(loan);
+    const { total, interest, penalty } = calculateOwed(loan);
     const balance = getBalance(loan.currency);
 
     if (balance < total) return false;
 
     updateBalance(loan.currency, -total);
     setLoans(prev => prev.map(l => 
-      l.id === loanId ? { ...l, status: 'paid' as const } : l
+      l.id === loanId 
+        ? { 
+            ...l, 
+            status: 'paid' as const, 
+            repaidDate: new Date(),
+            interestPaid: interest,
+            penaltyPaid: penalty
+          } 
+        : l
     ));
     return true;
   };
 
+  const loanHistory = loans.filter(l => l.status === 'paid');
+
   return (
-    <LoanContext.Provider value={{ loans, applyLoan, repayLoan, calculateOwed }}>
+    <LoanContext.Provider value={{ loans, applyLoan, repayLoan, calculateOwed, loanHistory }}>
       {children}
     </LoanContext.Provider>
   );

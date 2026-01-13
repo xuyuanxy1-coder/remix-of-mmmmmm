@@ -70,12 +70,17 @@ const LoanRepayment = () => {
                       key={loan.id} 
                       className="bg-muted/50 rounded-lg p-4 border border-border"
                     >
-                      <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           {getStatusIcon(owed.daysElapsed)}
                           <span className={`text-sm font-medium ${getStatusColor(owed.daysElapsed)}`}>
                             Day {owed.daysElapsed + 1}
                           </span>
+                          {loan.guarantorId && (
+                            <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded">
+                              Secured
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs text-muted-foreground">
                           {new Date(loan.borrowDate).toLocaleDateString()}
