@@ -351,12 +351,20 @@ const Account = () => {
             ))}
           </TabsList>
 
-          {RECHARGE_NETWORKS.map((network) => (
+          {RECHARGE_NETWORKS.map((network) => {
+            const ethPrice = getPrice('ETH');
+            const showRate = network.id === 'eth';
+            
+            return (
             <TabsContent key={network.id} value={network.id} className="space-y-6">
-              {/* Rate Display */}
-              <div className="text-center p-3 bg-muted/50 rounded-lg border border-border">
-                <span className="text-primary font-medium">1 {network.name}: {network.rate} USD</span>
-              </div>
+              {/* Rate Display - Only for ETH */}
+              {showRate && (
+                <div className="text-center p-3 bg-muted/50 rounded-lg border border-border">
+                  <span className="text-primary font-medium">
+                    1 ETH: {ethPrice ? ethPrice.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---'} USD
+                  </span>
+                </div>
+              )}
 
               {/* Contact Notice */}
               <div className="text-center p-4 bg-muted/30 rounded-lg border border-border">
@@ -389,7 +397,8 @@ const Account = () => {
                 </p>
               </div>
             </TabsContent>
-          ))}
+            );
+          })}
         </Tabs>
       </div>
 
