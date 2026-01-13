@@ -36,6 +36,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { useLoan } from '@/contexts/LoanContext';
 
 type AccountView = 'overview' | 'withdraw' | 'recharge' | 'exchange';
 
@@ -81,8 +82,10 @@ const Account = () => {
   
   const { assets, getBalance } = useAssets();
   const { getPrice } = useCryptoPrices();
+  const { loans } = useLoan();
 
-  // Calculate total assets in USD
+  // Check if user has active loans
+  const hasActiveLoan = loans.some(loan => loan.status === 'active');
   const totalAssets = CRYPTO_ASSETS.reduce((total, crypto) => {
     const balance = getBalance(crypto.symbol);
     const priceData = getPrice(crypto.symbol);
@@ -287,7 +290,22 @@ const Account = () => {
 
   const renderWithdraw = () => (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-card border border-border rounded-2xl p-6">
+      {/* Active Loan Warning */}
+      {hasActiveLoan && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-red-600 dark:text-red-400">Withdrawal Locked</p>
+              <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">
+                You have an active loan. Withdrawals are disabled until all loans are fully repaid.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`bg-card border border-border rounded-2xl p-6 ${hasActiveLoan ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="space-y-6">
           {/* Network Selection */}
           <div>
