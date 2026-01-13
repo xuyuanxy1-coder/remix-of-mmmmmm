@@ -1,22 +1,22 @@
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 const marketData = [
-  { name: 'AAPL', icon: '🍎', change: 0.38, price: 272 },
-  { name: 'USDCNY', icon: '🇨🇳', change: -0.2, price: 7.0143 },
-  { name: 'UKOIL', icon: '🛢️', change: 0, price: 62.454 },
-  { name: 'INTC', icon: '💻', change: -4.04, price: 34.9 },
-  { name: 'XAU', icon: '🥇', change: 0.03, price: 4484.84 },
-  { name: 'USDJPY', icon: '🇯🇵', change: -0.18, price: 155.936 },
   { name: 'BTC', icon: '₿', change: 1.51, price: 92027.52 },
-  { name: 'USDHKD', icon: '🇭🇰', change: -0.01, price: 7.77631 },
-  { name: 'TSLA', icon: '⚡', change: -0.5, price: 486.3 },
-  { name: 'USOIL', icon: '🛢️', change: 0.13, price: 58.534 },
-  { name: 'FTT', icon: '🔷', change: 0.76, price: 0.5285 },
-  { name: 'XAG', icon: '🥈', change: 1.07, price: 72.068 },
-  { name: 'NVDA', icon: '🎮', change: 2.46, price: 188.2 },
   { name: 'ETH', icon: '⟠', change: 0.94, price: 3138.56 },
   { name: 'BNB', icon: '🟡', change: 1.09, price: 910.06 },
   { name: 'SOL', icon: '☀️', change: 1.58, price: 141.83 },
+  { name: 'XRP', icon: '💧', change: 2.34, price: 2.18 },
+  { name: 'ADA', icon: '🔵', change: -0.85, price: 0.68 },
+  { name: 'DOGE', icon: '🐕', change: 3.21, price: 0.32 },
+  { name: 'AVAX', icon: '🔺', change: 1.87, price: 35.42 },
+  { name: 'DOT', icon: '⚪', change: -1.23, price: 6.85 },
+  { name: 'MATIC', icon: '🟣', change: 0.76, price: 0.89 },
+  { name: 'LINK', icon: '🔗', change: 1.30, price: 13.28 },
+  { name: 'UNI', icon: '🦄', change: 1.88, price: 5.47 },
+  { name: 'SHIB', icon: '🐶', change: 4.52, price: 0.000022 },
+  { name: 'LTC', icon: '🪙', change: -0.45, price: 84.32 },
+  { name: 'ATOM', icon: '⚛️', change: 2.15, price: 8.76 },
+  { name: 'ARB', icon: '🔷', change: 3.53, price: 0.21 },
 ];
 
 const MarketTable = () => {
