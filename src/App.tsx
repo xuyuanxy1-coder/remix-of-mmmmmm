@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Trade from "./pages/Trade";
 import Loan from "./pages/Loan";
 import Auth from "./pages/Auth";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/trade/:symbol" element={<Trade />} />
               <Route path="/loan" element={<Loan />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/account" element={<Account />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>

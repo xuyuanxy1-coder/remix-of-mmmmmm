@@ -11,7 +11,7 @@ const navItems = [
   { label: 'Market', href: '/#market' },
   { label: 'Smart trading', href: '/trade/BTC' },
   { label: 'Loan', href: '/loan' },
-  { label: 'Account', href: '#' },
+  { label: 'Account', href: '/account' },
 ];
 
 const Navbar = () => {
