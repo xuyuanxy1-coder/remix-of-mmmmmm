@@ -64,9 +64,12 @@ const Account = () => {
   const [currentView, setCurrentView] = useState<AccountView>('overview');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
-  const [selectedNetwork, setSelectedNetwork] = useState('usdt');
-  const [selectedRechargeNetwork, setSelectedRechargeNetwork] = useState('trc20');
+  const [selectedNetwork, setSelectedNetwork] = useState('erc20');
+  const [selectedRechargeNetwork, setSelectedRechargeNetwork] = useState('erc20');
   const [copied, setCopied] = useState(false);
+  const [rechargeAmount, setRechargeAmount] = useState('');
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [receiptFileName, setReceiptFileName] = useState('');
   
   const { assets, getBalance } = useAssets();
   const { getPrice } = useCryptoPrices();
@@ -109,6 +112,38 @@ const Account = () => {
     toast.success('Withdrawal request submitted. Please wait for processing.');
     setWithdrawAmount('');
     setWithdrawAddress('');
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size must be less than 5MB');
+        return;
+      }
+      setReceiptFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRechargeSubmit = () => {
+    const amount = parseFloat(rechargeAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    if (!receiptImage) {
+      toast.error('Please upload a receipt image');
+      return;
+    }
+    toast.success('Recharge request submitted. Please wait for confirmation.');
+    setRechargeAmount('');
+    setReceiptImage(null);
+    setReceiptFileName('');
   };
 
   const renderBreadcrumb = () => {
@@ -402,36 +437,68 @@ const Account = () => {
         </Tabs>
       </div>
 
-      {/* Recharge Instructions */}
+      {/* Upload Receipt Form */}
       <div className="bg-card border border-border rounded-2xl p-6">
         <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <Info className="w-5 h-5 text-primary" />
-          Recharge Instructions
+          <Upload className="w-5 h-5 text-primary" />
+          Upload Recharge Receipt
         </h3>
         
-        <p className="text-sm text-muted-foreground mb-4">Minimum Deposit Amount:</p>
-        
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          {Object.entries(MIN_DEPOSITS).map(([symbol, amount]) => (
-            <div key={symbol} className="text-center p-3 bg-muted/50 rounded-lg border border-border">
-              <p className="text-xs text-muted-foreground mb-1">{symbol}</p>
-              <p className="font-semibold">{amount}</p>
-            </div>
-          ))}
-        </div>
+        <div className="space-y-4">
+          {/* Recharge Amount */}
+          <div>
+            <label className="text-sm text-muted-foreground mb-2 block">Recharge Amount (USDT):</label>
+            <Input
+              type="number"
+              value={rechargeAmount}
+              onChange={(e) => setRechargeAmount(e.target.value)}
+              placeholder="Enter amount..."
+            />
+          </div>
 
-        <div className="flex items-start gap-3 text-sm text-primary">
-          <Info className="w-4 h-4 mt-0.5" />
-          <span>For P2P fiat transactions, please contact customer service</span>
+          {/* Image Upload */}
+          <div>
+            <label className="text-sm text-muted-foreground mb-2 block">Receipt Image:</label>
+            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="receipt-upload"
+              />
+              <label htmlFor="receipt-upload" className="cursor-pointer">
+                {receiptImage ? (
+                  <div className="space-y-3">
+                    <img 
+                      src={receiptImage} 
+                      alt="Receipt preview" 
+                      className="max-h-48 mx-auto rounded-lg"
+                    />
+                    <p className="text-sm text-muted-foreground">{receiptFileName}</p>
+                    <p className="text-xs text-primary">Click to change image</p>
+                  </div>
+                ) : (
+                  <div className="py-6">
+                    <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Click to upload receipt image</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</p>
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <Button 
+            onClick={handleRechargeSubmit}
+            className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg font-medium"
+          >
+            Submit Recharge Request
+            <ChevronRight className="w-5 h-5 ml-2" />
+          </Button>
         </div>
       </div>
-
-      {/* Upload Receipt Button */}
-      <Button className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg font-medium">
-        <Upload className="w-5 h-5 mr-2" />
-        Upload receipt
-        <ChevronRight className="w-5 h-5 ml-2" />
-      </Button>
     </div>
   );
 
