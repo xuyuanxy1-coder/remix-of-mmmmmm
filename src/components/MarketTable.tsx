@@ -1,5 +1,4 @@
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const marketData = [
   { name: 'BTC', icon: '₿', change: 1.51, price: 92027.52 },
@@ -41,10 +40,9 @@ const MarketTable = () => {
           {/* Table Body */}
           <div className="divide-y divide-border">
             {marketData.map((item, index) => (
-              <Link 
+              <div 
                 key={index}
-                to={`/trade/${item.name}`}
-                className="grid grid-cols-4 gap-4 py-4 px-6 hover:bg-muted/30 transition-colors cursor-pointer"
+                className="grid grid-cols-4 gap-4 py-4 px-6 hover:bg-muted/30 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{item.icon}</span>
@@ -67,20 +65,11 @@ const MarketTable = () => {
                 <div className="text-right font-medium">
                   ${item.price.toLocaleString()}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
 
-        <div className="text-center mt-8">
-          <Link 
-            to="/trade/BTC"
-            className="inline-flex items-center gap-2 text-primary font-medium hover:underline"
-          >
-            View all markets
-            <span>→</span>
-          </Link>
-        </div>
       </div>
     </section>
   );

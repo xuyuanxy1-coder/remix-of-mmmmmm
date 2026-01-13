@@ -12,17 +12,20 @@ interface TradingPanelProps {
 const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
   const { getBalance, updateBalance } = useAssets();
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
-  const [amount, setAmount] = useState('');
+  const [usdtAmount, setUsdtAmount] = useState('');
   const [price, setPrice] = useState(currentPrice.toString());
 
   const usdtBalance = getBalance('USDT');
   const cryptoBalance = getBalance(symbol);
 
+  // Calculate crypto amount based on USDT input
+  const cryptoAmount = (parseFloat(usdtAmount) || 0) / (parseFloat(price) || currentPrice);
+
   const handleTrade = () => {
-    const amountNum = parseFloat(amount);
+    const usdtNum = parseFloat(usdtAmount);
     const priceNum = parseFloat(price);
 
-    if (isNaN(amountNum) || amountNum <= 0) {
+    if (isNaN(usdtNum) || usdtNum <= 0) {
       toast.error('Please enter a valid amount');
       return;
     }
@@ -32,37 +35,37 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
       return;
     }
 
-    const total = amountNum * priceNum;
+    const cryptoNum = usdtNum / priceNum;
 
     if (orderType === 'buy') {
-      if (total > usdtBalance) {
+      if (usdtNum > usdtBalance) {
         toast.error('Insufficient USDT balance');
         return;
       }
-      updateBalance('USDT', -total);
-      updateBalance(symbol, amountNum);
-      toast.success(`Successfully bought ${amountNum} ${symbol}`);
+      updateBalance('USDT', -usdtNum);
+      updateBalance(symbol, cryptoNum);
+      toast.success(`Successfully bought ${cryptoNum.toFixed(6)} ${symbol} for ${usdtNum} USDT`);
     } else {
-      if (amountNum > cryptoBalance) {
+      if (cryptoNum > cryptoBalance) {
         toast.error(`Insufficient ${symbol} balance`);
         return;
       }
-      updateBalance(symbol, -amountNum);
-      updateBalance('USDT', total);
-      toast.success(`Successfully sold ${amountNum} ${symbol}`);
+      updateBalance(symbol, -cryptoNum);
+      updateBalance('USDT', usdtNum);
+      toast.success(`Successfully sold ${cryptoNum.toFixed(6)} ${symbol} for ${usdtNum} USDT`);
     }
 
-    setAmount('');
+    setUsdtAmount('');
   };
 
   const setPercentage = (pct: number) => {
-    const priceNum = parseFloat(price) || currentPrice;
     if (orderType === 'buy') {
-      const maxAmount = (usdtBalance * pct) / priceNum;
-      setAmount(maxAmount.toFixed(8));
+      const maxUsdt = usdtBalance * pct;
+      setUsdtAmount(maxUsdt.toFixed(2));
     } else {
-      const maxAmount = cryptoBalance * pct;
-      setAmount(maxAmount.toFixed(8));
+      const priceNum = parseFloat(price) || currentPrice;
+      const maxUsdt = cryptoBalance * priceNum * pct;
+      setUsdtAmount(maxUsdt.toFixed(2));
     }
   };
 
@@ -97,11 +100,11 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
         </div>
 
         <div>
-          <label className="text-sm text-muted-foreground mb-1 block">Amount ({symbol})</label>
+          <label className="text-sm text-muted-foreground mb-1 block">Amount (USDT)</label>
           <Input
             type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={usdtAmount}
+            onChange={(e) => setUsdtAmount(e.target.value)}
             placeholder="0.00"
           />
           <div className="flex gap-2 mt-2">
@@ -114,6 +117,13 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
                 {pct * 100}%
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+          <div className="flex justify-between">
+            <span>≈ {symbol} Amount:</span>
+            <span className="font-medium">{cryptoAmount.toFixed(6)} {symbol}</span>
           </div>
         </div>
 
@@ -130,7 +140,7 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
           <div className="flex justify-between mt-1">
             <span>Total:</span>
             <span>
-              {((parseFloat(amount) || 0) * (parseFloat(price) || 0)).toLocaleString()} USDT
+              {(parseFloat(usdtAmount) || 0).toLocaleString()} USDT
             </span>
           </div>
         </div>
