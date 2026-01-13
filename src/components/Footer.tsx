@@ -1,4 +1,5 @@
 import { Globe } from 'lucide-react';
+import MetaMaskLogo from '@/components/MetaMaskLogo';
 
 const footerLinks = {
   Products: ['Spot Trading', 'Margin Trading', 'Derivatives', 'Loans'],
@@ -19,9 +20,7 @@ const Footer = () => {
           {/* Logo & Description */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-                <span className="text-foreground font-bold text-sm">M</span>
-              </div>
+              <MetaMaskLogo size={32} />
               <span className="font-display font-semibold text-lg">MetaMask Trade</span>
             </div>
             <p className="text-background/60 text-sm leading-relaxed mb-6">

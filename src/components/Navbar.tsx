@@ -3,6 +3,7 @@ import { ChevronDown, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
+import MetaMaskLogo from '@/components/MetaMaskLogo';
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -21,9 +22,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">M</span>
-            </div>
+            <MetaMaskLogo size={32} />
             <span className="font-display font-semibold text-lg">MetaMask Trade</span>
           </Link>
 
