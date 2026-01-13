@@ -44,7 +44,7 @@ const MarketTable = () => {
                 {isLoading ? 'Loading prices...' : 'No data available'}
               </div>
             ) : (
-              prices.map((item) => (
+              prices.filter(item => item && item.price !== undefined).map((item) => (
                 <div 
                   key={item.symbol}
                   className={`grid grid-cols-4 gap-4 py-4 px-6 hover:bg-muted/30 transition-colors ${
@@ -57,17 +57,17 @@ const MarketTable = () => {
                     <span className="font-medium">{item.symbol}</span>
                   </div>
                   
-                  <div className={`flex items-center justify-center gap-1 ${item.change24h >= 0 ? 'price-up' : 'price-down'}`}>
-                    {item.change24h >= 0 ? (
+                  <div className={`flex items-center justify-center gap-1 ${(item.change24h ?? 0) >= 0 ? 'price-up' : 'price-down'}`}>
+                    {(item.change24h ?? 0) >= 0 ? (
                       <TrendingUp className="w-4 h-4" />
                     ) : (
                       <TrendingDown className="w-4 h-4" />
                     )}
-                    <span className="font-medium">{item.change24h >= 0 ? '+' : ''}{item.change24h.toFixed(2)}%</span>
+                    <span className="font-medium">{(item.change24h ?? 0) >= 0 ? '+' : ''}{(item.change24h ?? 0).toFixed(2)}%</span>
                   </div>
                   
                   <div className="flex items-center justify-center">
-                    <MiniChart positive={item.change24h >= 0} />
+                    <MiniChart positive={(item.change24h ?? 0) >= 0} />
                   </div>
                   
                   <div className={`text-right font-medium flex items-center justify-end gap-1 ${
@@ -76,9 +76,9 @@ const MarketTable = () => {
                   }`}>
                     {item.priceDirection === 'up' && <TrendingUp className="w-3 h-3" />}
                     {item.priceDirection === 'down' && <TrendingDown className="w-3 h-3" />}
-                    ${item.price.toLocaleString(undefined, { 
-                      minimumFractionDigits: item.price < 1 ? 6 : 2,
-                      maximumFractionDigits: item.price < 1 ? 6 : 2
+                    ${(item.price ?? 0).toLocaleString(undefined, { 
+                      minimumFractionDigits: (item.price ?? 0) < 1 ? 6 : 2,
+                      maximumFractionDigits: (item.price ?? 0) < 1 ? 6 : 2
                     })}
                   </div>
                 </div>
