@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import MetaMaskLogo from '@/components/MetaMaskLogo';
 import { toast } from 'sonner';
-import { User, Plus, Wallet, Send } from 'lucide-react';
+import { Wallet, Send, Shield, Sparkles, TrendingUp, Lock } from 'lucide-react';
 
 type AuthMode = 'login' | 'register';
 
@@ -27,7 +26,6 @@ const Auth = () => {
       toast.error('Please fill in all fields');
       return;
     }
-    // Simulated login
     toast.success('Login successful!');
     navigate('/');
   };
@@ -46,7 +44,6 @@ const Auth = () => {
       toast.error('Please enter verification code');
       return;
     }
-    // Simulated registration
     toast.success('Registration successful! Please login.');
     setMode('login');
   };
@@ -61,13 +58,8 @@ const Auth = () => {
 
   const handleConnectWallet = async (network: string) => {
     setIsConnecting(true);
-    
-    // Simulate wallet connection
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Randomly succeed or fail for demo
     const success = Math.random() > 0.3;
-    
     setIsConnecting(false);
     setIsWalletModalOpen(false);
     
@@ -80,278 +72,288 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <header className="border-b border-border px-4 lg:px-8 py-4">
-        <Link to="/" className="flex items-center gap-2 w-fit">
-          <MetaMaskLogo size={32} />
-          <span className="font-display font-semibold text-lg">MetaMask Trade</span>
-        </Link>
+      <header className="relative z-10 border-b border-border/50 backdrop-blur-sm px-4 lg:px-8 py-4">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <MetaMaskLogo size={32} />
+            <span className="font-display font-semibold text-lg">MetaMask Trade</span>
+          </Link>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Back to Home
+          </Link>
+        </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        <div className="grid lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
-          {/* Form Section */}
-          <div className="max-w-md w-full mx-auto lg:mx-0">
-            <h1 className="font-display text-3xl lg:text-4xl font-bold mb-8">
-              Welcome to MetaMask Trade
-            </h1>
-
-            {mode === 'login' ? (
-              <form onSubmit={handleLogin} className="space-y-6">
-                {/* Username Field */}
-                <div className="relative">
-                  <Label className="absolute -top-2.5 left-3 bg-background px-1 text-xs text-muted-foreground">
-                    Username:
-                  </Label>
-                  <Input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="h-14 bg-muted/30 border-muted"
-                    placeholder="Enter your username"
-                  />
-                </div>
-
-                {/* Password Field */}
-                <div className="relative">
-                  <Label className="absolute -top-2.5 left-3 bg-background px-1 text-xs text-muted-foreground">
-                    Password:
-                  </Label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-14 bg-muted/30 border-muted"
-                    placeholder="Enter your password"
-                  />
-                </div>
-
-                {/* Login Button */}
-                <Button
-                  type="submit"
-                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-900 rounded-full"
-                >
-                  Login
-                </Button>
-
-                {/* Connect Wallet Button */}
-                <Button
-                  type="button"
-                  onClick={() => setIsWalletModalOpen(true)}
-                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-500 hover:to-cyan-600 text-cyan-900 rounded-full"
-                >
-                  <Wallet className="w-5 h-5 mr-2" />
-                  Connect Wallet
-                </Button>
-
-                {/* Register Link */}
-                <div className="text-center pt-4">
-                  <p className="text-muted-foreground">I don't have an account</p>
-                  <button
-                    type="button"
-                    onClick={() => setMode('register')}
-                    className="text-muted-foreground hover:text-foreground underline mt-1"
-                  >
-                    Register
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleRegister} className="space-y-5">
-                {/* Email Field */}
-                <div className="relative">
-                  <Label className="absolute -top-2.5 left-3 bg-background px-1 text-xs text-muted-foreground">
-                    Email:
-                  </Label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-14 bg-muted/30 border-muted"
-                    placeholder="Enter your email"
-                  />
-                </div>
-
-                {/* Username Field */}
-                <div className="relative">
-                  <Label className="absolute -top-2.5 left-3 bg-background px-1 text-xs text-muted-foreground">
-                    Username:
-                  </Label>
-                  <Input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="h-14 bg-muted/30 border-muted"
-                    placeholder="Choose a username"
-                  />
-                </div>
-
-                {/* Password Field */}
-                <div className="relative">
-                  <Label className="absolute -top-2.5 left-3 bg-background px-1 text-xs text-muted-foreground">
-                    Password:
-                  </Label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-14 bg-muted/30 border-muted"
-                    placeholder="Create a password"
-                  />
-                </div>
-
-                {/* Confirm Password Field */}
-                <div className="relative">
-                  <Label className="absolute -top-2.5 left-3 bg-background px-1 text-xs text-muted-foreground">
-                    Confirm Password:
-                  </Label>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-14 bg-muted/30 border-muted"
-                    placeholder="Confirm your password"
-                  />
-                </div>
-
-                {/* Verification Code Field */}
-                <div className="relative">
-                  <Label className="absolute -top-2.5 left-3 bg-background px-1 text-xs text-muted-foreground">
-                    Verification Code:
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      className="h-14 bg-muted/30 border-muted flex-1"
-                      placeholder="Enter code"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleSendCode}
-                      variant="outline"
-                      className="h-14 px-6 rounded-full border-primary text-primary hover:bg-primary/10"
-                    >
-                      <Send className="w-4 h-4 mr-1" />
-                      Send
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Sign Up Button */}
-                <Button
-                  type="submit"
-                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-900 rounded-full"
-                >
-                  Sign-up with Email
-                </Button>
-
-                {/* Login Link */}
-                <div className="text-center pt-4">
-                  <p className="text-muted-foreground">Already have an account?</p>
-                  <button
-                    type="button"
-                    onClick={() => setMode('login')}
-                    className="text-foreground font-semibold hover:underline mt-1"
-                  >
-                    Login
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-
-          {/* Illustration Section (only for register) */}
-          {mode === 'register' && (
-            <div className="hidden lg:flex flex-col items-center justify-center text-center">
-              <div className="relative mb-8">
-                {/* Card Illustration */}
-                <div className="w-48 h-48 bg-muted/50 rounded-3xl flex items-center justify-center shadow-lg">
-                  <div className="text-center">
-                    <User className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
-                    <div className="w-16 h-1 bg-muted-foreground/30 mx-auto" />
-                  </div>
-                </div>
-                {/* Plus Icon */}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-12 h-12 bg-background border-2 border-primary rounded-full flex items-center justify-center">
-                  <Plus className="w-6 h-6 text-primary" />
-                </div>
+      <main className="relative z-10 container mx-auto px-4 py-8 lg:py-16">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 max-w-6xl mx-auto items-center min-h-[calc(100vh-200px)]">
+          
+          {/* Left Side - Branding */}
+          <div className="hidden lg:block space-y-8">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Secure & Trusted</span>
               </div>
-              
-              <h2 className="font-display text-2xl font-bold mb-4">
-                Sign up and embark on<br />your prosperous<br />investment journey!
-              </h2>
-              <p className="text-muted-foreground text-sm max-w-xs">
-                Complete your registration and unlock the gateway to a world of exciting investment opportunities, paving the way for financial success and growth!
+              <h1 className="text-4xl lg:text-5xl font-display font-bold leading-tight">
+                {mode === 'login' 
+                  ? 'Welcome Back to MetaMask Trade' 
+                  : 'Start Your Investment Journey'}
+              </h1>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                {mode === 'login'
+                  ? 'Access your portfolio and continue trading with the most secure platform.'
+                  : 'Complete your registration and unlock the gateway to exciting investment opportunities.'}
               </p>
             </div>
-          )}
+
+            {/* Feature Cards */}
+            <div className="grid gap-4">
+              <div className="feature-card flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Bank-Level Security</h3>
+                  <p className="text-sm text-muted-foreground">256-bit encryption for all transactions</p>
+                </div>
+              </div>
+              <div className="feature-card flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Real-Time Trading</h3>
+                  <p className="text-sm text-muted-foreground">Trade 350+ cryptocurrencies instantly</p>
+                </div>
+              </div>
+              <div className="feature-card flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Lock className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Self-Custody</h3>
+                  <p className="text-sm text-muted-foreground">You control your private keys</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Form */}
+          <div className="w-full max-w-md mx-auto lg:mx-0">
+            <div className="bg-card border border-border rounded-3xl p-8 shadow-xl backdrop-blur-sm">
+              {/* Mobile Logo */}
+              <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
+                <MetaMaskLogo size={40} />
+                <span className="font-display font-semibold text-xl">MetaMask Trade</span>
+              </div>
+
+              <div className="text-center mb-8">
+                <h2 className="font-display text-2xl font-bold">
+                  {mode === 'login' ? 'Sign In' : 'Create Account'}
+                </h2>
+                <p className="text-muted-foreground text-sm mt-2">
+                  {mode === 'login' 
+                    ? 'Enter your credentials to access your account' 
+                    : 'Fill in your details to get started'}
+                </p>
+              </div>
+
+              {mode === 'login' ? (
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Username</label>
+                    <Input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
+                      placeholder="Enter your username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Password</label>
+                    <Input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
+                      placeholder="Enter your password"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-base font-semibold gold-gradient text-primary-foreground rounded-xl hover:opacity-90 transition-opacity"
+                  >
+                    Login
+                  </Button>
+
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border/50"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">or continue with</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => setIsWalletModalOpen(true)}
+                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-xl"
+                  >
+                    <Wallet className="w-5 h-5 mr-2" />
+                    Connect Wallet
+                  </Button>
+
+                  <div className="text-center pt-4">
+                    <p className="text-muted-foreground text-sm">
+                      Don't have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setMode('register')}
+                        className="text-primary font-semibold hover:underline"
+                      >
+                        Sign up
+                      </button>
+                    </p>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Email</label>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Username</label>
+                    <Input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
+                      placeholder="Choose a username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Password</label>
+                    <Input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
+                      placeholder="Create a password"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Confirm Password</label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
+                      placeholder="Confirm your password"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Verification Code</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20 flex-1"
+                        placeholder="Enter code"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleSendCode}
+                        variant="outline"
+                        className="h-12 px-4 rounded-xl border-primary text-primary hover:bg-primary/10"
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-base font-semibold gold-gradient text-primary-foreground rounded-xl hover:opacity-90 transition-opacity mt-2"
+                  >
+                    Create Account
+                  </Button>
+
+                  <div className="text-center pt-4">
+                    <p className="text-muted-foreground text-sm">
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setMode('login')}
+                        className="text-primary font-semibold hover:underline"
+                      >
+                        Sign in
+                      </button>
+                    </p>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 
       {/* Connect Wallet Modal */}
       <Dialog open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Select Network</DialogTitle>
+            <DialogTitle className="font-display text-xl">Select Network</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-4">
-            <button
-              onClick={() => handleConnectWallet('Ethereum Network')}
-              disabled={isConnecting}
-              className="w-full p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-xl">⟠</span>
+            {[
+              { name: 'Ethereum Network', desc: 'Connect Ethereum network wallet', icon: '⟠', color: 'from-blue-500/20 to-purple-500/20' },
+              { name: 'BSC Network', desc: 'Connect BNB Smart Chain wallet', icon: '🟡', color: 'from-yellow-500/20 to-orange-500/20' },
+              { name: 'Polygon Network', desc: 'Connect Polygon network wallet', icon: '🟣', color: 'from-purple-500/20 to-pink-500/20' },
+            ].map((network) => (
+              <button
+                key={network.name}
+                onClick={() => handleConnectWallet(network.name)}
+                disabled={isConnecting}
+                className={`w-full p-4 bg-gradient-to-r ${network.color} border border-border rounded-xl hover:border-primary/50 transition-all text-left disabled:opacity-50 group`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-card rounded-full flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition-transform">
+                    {network.icon}
+                  </div>
+                  <div>
+                    <p className="font-semibold">{network.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isConnecting ? 'Connecting...' : network.desc}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">Ethereum Network</p>
-                  <p className="text-sm text-muted-foreground">
-                    {isConnecting ? 'Connecting...' : 'Connect Ethereum network wallet'}
-                  </p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleConnectWallet('BSC Network')}
-              disabled={isConnecting}
-              className="w-full p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-xl">🟡</span>
-                </div>
-                <div>
-                  <p className="font-semibold">BSC Network</p>
-                  <p className="text-sm text-muted-foreground">
-                    {isConnecting ? 'Connecting...' : 'Connect BNB Smart Chain wallet'}
-                  </p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleConnectWallet('Polygon Network')}
-              disabled={isConnecting}
-              className="w-full p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-xl">🟣</span>
-                </div>
-                <div>
-                  <p className="font-semibold">Polygon Network</p>
-                  <p className="text-sm text-muted-foreground">
-                    {isConnecting ? 'Connecting...' : 'Connect Polygon network wallet'}
-                  </p>
-                </div>
-              </div>
-            </button>
+              </button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
