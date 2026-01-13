@@ -9,6 +9,7 @@ import { LoanProvider } from "@/contexts/LoanContext";
 import Index from "./pages/Index";
 import Trade from "./pages/Trade";
 import Loan from "./pages/Loan";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,11 +24,12 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/trade/:symbol" element={<Trade />} />
-                <Route path="/loan" element={<Loan />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/trade/:symbol" element={<Trade />} />
+              <Route path="/loan" element={<Loan />} />
+              <Route path="/auth" element={<Auth />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
