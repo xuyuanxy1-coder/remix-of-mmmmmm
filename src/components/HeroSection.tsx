@@ -10,7 +10,7 @@ const HeroSection = () => {
           {/* Left Content */}
           <div className="space-y-8 animate-fade-in-up">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold leading-tight">
-              Buy, trade, and hold 350+ cryptocurrencies on ShieldDEX
+              Buy, trade, and hold 350+ cryptocurrencies on MetaMask Trade
             </h1>
             
             <Button className="btn-primary inline-flex items-center gap-2 px-8 py-3 text-base">
