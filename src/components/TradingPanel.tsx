@@ -11,17 +11,15 @@ interface TradingPanelProps {
 
 const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
   const { getBalance, updateBalance } = useAssets();
-  const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
   const [usdtAmount, setUsdtAmount] = useState('');
   const [price, setPrice] = useState(currentPrice.toString());
 
   const usdtBalance = getBalance('USDT');
-  const cryptoBalance = getBalance(symbol);
 
   // Calculate crypto amount based on USDT input
   const cryptoAmount = (parseFloat(usdtAmount) || 0) / (parseFloat(price) || currentPrice);
 
-  const handleTrade = () => {
+  const handleBuy = () => {
     const usdtNum = parseFloat(usdtAmount);
     const priceNum = parseFloat(price);
 
@@ -37,55 +35,30 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
 
     const cryptoNum = usdtNum / priceNum;
 
-    if (orderType === 'buy') {
-      if (usdtNum > usdtBalance) {
-        toast.error('Insufficient USDT balance');
-        return;
-      }
-      updateBalance('USDT', -usdtNum);
-      updateBalance(symbol, cryptoNum);
-      toast.success(`Successfully bought ${cryptoNum.toFixed(6)} ${symbol} for ${usdtNum} USDT`);
-    } else {
-      if (cryptoNum > cryptoBalance) {
-        toast.error(`Insufficient ${symbol} balance`);
-        return;
-      }
-      updateBalance(symbol, -cryptoNum);
-      updateBalance('USDT', usdtNum);
-      toast.success(`Successfully sold ${cryptoNum.toFixed(6)} ${symbol} for ${usdtNum} USDT`);
+    if (usdtNum > usdtBalance) {
+      toast.error('Insufficient USDT balance');
+      return;
     }
+
+    updateBalance('USDT', -usdtNum);
+    updateBalance(symbol, cryptoNum);
+    toast.success(`Successfully bought ${cryptoNum.toFixed(6)} ${symbol} for ${usdtNum} USDT`);
 
     setUsdtAmount('');
   };
 
   const setPercentage = (pct: number) => {
-    if (orderType === 'buy') {
-      const maxUsdt = usdtBalance * pct;
-      setUsdtAmount(maxUsdt.toFixed(2));
-    } else {
-      const priceNum = parseFloat(price) || currentPrice;
-      const maxUsdt = cryptoBalance * priceNum * pct;
-      setUsdtAmount(maxUsdt.toFixed(2));
-    }
+    const maxUsdt = usdtBalance * pct;
+    setUsdtAmount(maxUsdt.toFixed(2));
   };
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant={orderType === 'buy' ? 'default' : 'outline'}
-          onClick={() => setOrderType('buy')}
-          className={`flex-1 ${orderType === 'buy' ? 'bg-[hsl(145,60%,45%)] hover:bg-[hsl(145,60%,40%)] text-white' : ''}`}
-        >
-          Buy
-        </Button>
-        <Button
-          variant={orderType === 'sell' ? 'default' : 'outline'}
-          onClick={() => setOrderType('sell')}
-          className={`flex-1 ${orderType === 'sell' ? 'bg-[hsl(0,70%,55%)] hover:bg-[hsl(0,70%,50%)] text-white' : ''}`}
-        >
-          Sell
-        </Button>
+      <div className="mb-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[hsl(145,60%,45%)]"></span>
+          Buy {symbol}
+        </h3>
       </div>
 
       <div className="space-y-4">
@@ -130,30 +103,19 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
         <div className="text-sm text-muted-foreground">
           <div className="flex justify-between">
             <span>Available:</span>
-            <span>
-              {orderType === 'buy' 
-                ? `${usdtBalance.toLocaleString()} USDT`
-                : `${cryptoBalance.toLocaleString()} ${symbol}`
-              }
-            </span>
+            <span>{usdtBalance.toLocaleString()} USDT</span>
           </div>
           <div className="flex justify-between mt-1">
             <span>Total:</span>
-            <span>
-              {(parseFloat(usdtAmount) || 0).toLocaleString()} USDT
-            </span>
+            <span>{(parseFloat(usdtAmount) || 0).toLocaleString()} USDT</span>
           </div>
         </div>
 
         <Button
-          onClick={handleTrade}
-          className={`w-full ${
-            orderType === 'buy' 
-              ? 'bg-[hsl(145,60%,45%)] hover:bg-[hsl(145,60%,40%)]' 
-              : 'bg-[hsl(0,70%,55%)] hover:bg-[hsl(0,70%,50%)]'
-          } text-white`}
+          onClick={handleBuy}
+          className="w-full bg-[hsl(145,60%,45%)] hover:bg-[hsl(145,60%,40%)] text-white"
         >
-          {orderType === 'buy' ? `Buy ${symbol}` : `Sell ${symbol}`}
+          Buy {symbol}
         </Button>
       </div>
     </div>

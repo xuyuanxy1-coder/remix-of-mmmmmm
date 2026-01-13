@@ -1,10 +1,17 @@
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import KlineChart from '@/components/KlineChart';
 import TradingPanel from '@/components/TradingPanel';
 import UserAssets from '@/components/UserAssets';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 const cryptoData: Record<string, { name: string; icon: string; price: number; change: number }> = {
   BTC: { name: 'Bitcoin', icon: '₿', price: 92027.52, change: 1.51 },
@@ -25,8 +32,14 @@ const cryptoData: Record<string, { name: string; icon: string; price: number; ch
   ARB: { name: 'Arbitrum', icon: '🔷', price: 0.21, change: 3.53 },
 };
 
+const cryptoList = Object.entries(cryptoData).map(([symbol, data]) => ({
+  symbol,
+  ...data,
+}));
+
 const TradePage = () => {
   const { symbol = 'BTC' } = useParams<{ symbol: string }>();
+  const navigate = useNavigate();
   const crypto = cryptoData[symbol.toUpperCase()] || cryptoData.BTC;
   const upperSymbol = symbol.toUpperCase();
 
@@ -46,9 +59,32 @@ const TradePage = () => {
             <div className="flex items-center gap-4">
               <span className="text-4xl">{crypto.icon}</span>
               <div>
-                <h1 className="text-2xl font-display font-semibold">
-                  {crypto.name} ({upperSymbol})
-                </h1>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-2xl font-display font-semibold p-0 h-auto hover:bg-transparent">
+                      {crypto.name} ({upperSymbol})
+                      <ChevronDown className="w-5 h-5 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-64 max-h-80 overflow-y-auto">
+                    {cryptoList.map((item) => (
+                      <DropdownMenuItem
+                        key={item.symbol}
+                        onClick={() => navigate(`/trade/${item.symbol}`)}
+                        className="flex items-center justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{item.icon}</span>
+                          <span>{item.name}</span>
+                          <span className="text-muted-foreground">({item.symbol})</span>
+                        </div>
+                        <span className={item.change >= 0 ? 'text-[hsl(145,60%,45%)]' : 'text-[hsl(0,70%,55%)]'}>
+                          {item.change >= 0 ? '+' : ''}{item.change}%
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-xl font-medium">
                     ${crypto.price.toLocaleString()}
