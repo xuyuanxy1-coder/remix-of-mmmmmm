@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { api, VerifyRequest, ApplicationResponse } from '@/lib/api';
 
 export interface KYCData {
   fullName: string;
@@ -11,8 +12,9 @@ export interface KYCData {
 
 interface KYCContextType {
   kycData: KYCData;
-  submitKYC: (data: Omit<KYCData, 'status' | 'submittedAt'>) => void;
+  submitKYC: (data: Omit<KYCData, 'status' | 'submittedAt'>) => Promise<boolean>;
   isVerified: boolean;
+  refreshKYCStatus: () => Promise<void>;
 }
 
 const defaultKYCData: KYCData = {
@@ -38,20 +40,58 @@ export const KYCProvider = ({ children }: { children: ReactNode }) => {
     return defaultKYCData;
   });
 
-  const submitKYC = (data: Omit<KYCData, 'status' | 'submittedAt'>) => {
-    const newData: KYCData = {
-      ...data,
-      status: 'pending',
-      submittedAt: new Date(),
-    };
-    setKYCData(newData);
-    localStorage.setItem('kycData', JSON.stringify(newData));
+  const refreshKYCStatus = async () => {
+    if (!api.isAuthenticated()) return;
+    
+    try {
+      const response = await api.get<{ status: KYCData['status']; data?: Partial<KYCData> }>('/user/kyc-status');
+      
+      if (response.status) {
+        setKYCData(prev => {
+          const updated = {
+            ...prev,
+            status: response.status,
+            ...response.data,
+          };
+          localStorage.setItem('kycData', JSON.stringify(updated));
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh KYC status:', error);
+    }
+  };
+
+  const submitKYC = async (data: Omit<KYCData, 'status' | 'submittedAt'>): Promise<boolean> => {
+    try {
+      const request: VerifyRequest = {
+        fullName: data.fullName,
+        idNumber: data.idNumber,
+        idType: data.idType,
+        idImage: data.idImage,
+      };
+
+      await api.post<ApplicationResponse>('/applications/verify', request);
+
+      const newData: KYCData = {
+        ...data,
+        status: 'pending',
+        submittedAt: new Date(),
+      };
+      setKYCData(newData);
+      localStorage.setItem('kycData', JSON.stringify(newData));
+      
+      return true;
+    } catch (error) {
+      console.error('KYC submission failed:', error);
+      return false;
+    }
   };
 
   const isVerified = kycData.status === 'approved';
 
   return (
-    <KYCContext.Provider value={{ kycData, submitKYC, isVerified }}>
+    <KYCContext.Provider value={{ kycData, submitKYC, isVerified, refreshKYCStatus }}>
       {children}
     </KYCContext.Provider>
   );

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import MetaMaskLogo from '@/components/MetaMaskLogo';
 import { toast } from 'sonner';
 import { Wallet, Send, Shield, Sparkles, TrendingUp, Lock } from 'lucide-react';
+import { api, WalletConnectResponse } from '@/lib/api';
 
 type AuthMode = 'login' | 'register';
 
@@ -18,19 +19,34 @@ const Auth = () => {
   const [verificationCode, setVerificationCode] = useState('');
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
       toast.error('Please fill in all fields');
       return;
     }
-    toast.success('Login successful!');
-    navigate('/');
+
+    setIsLoading(true);
+    try {
+      const response = await api.post<{ token: string }>('/auth/login', {
+        username: username.trim(),
+        password: password.trim(),
+      }, false);
+      
+      api.setToken(response.token);
+      toast.success('Login successful!');
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !username.trim() || !password.trim() || !confirmPassword.trim()) {
       toast.error('Please fill in all fields');
@@ -44,30 +60,75 @@ const Auth = () => {
       toast.error('Please enter verification code');
       return;
     }
-    toast.success('Registration successful! Please login.');
-    setMode('login');
+
+    setIsLoading(true);
+    try {
+      await api.post('/auth/register', {
+        email: email.trim(),
+        username: username.trim(),
+        password: password.trim(),
+        verificationCode: verificationCode.trim(),
+      }, false);
+      
+      toast.success('Registration successful! Please login.');
+      setMode('login');
+    } catch (error: any) {
+      toast.error(error.message || 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSendCode = () => {
+  const handleSendCode = async () => {
     if (!email.trim()) {
       toast.error('Please enter your email first');
       return;
     }
-    toast.success('Verification code sent to your email');
+
+    try {
+      await api.post('/auth/send-code', { email: email.trim() }, false);
+      toast.success('Verification code sent to your email');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send verification code');
+    }
   };
 
   const handleConnectWallet = async (network: string) => {
     setIsConnecting(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const success = Math.random() > 0.3;
-    setIsConnecting(false);
-    setIsWalletModalOpen(false);
     
-    if (success) {
+    try {
+      // Check if MetaMask or similar wallet is available
+      const ethereum = (window as any).ethereum;
+      if (!ethereum) {
+        toast.error('Please install MetaMask or another Web3 wallet');
+        setIsConnecting(false);
+        return;
+      }
+
+      // Request wallet connection
+      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+      const walletAddress = accounts[0];
+
+      if (!walletAddress) {
+        toast.error('No wallet address found');
+        setIsConnecting(false);
+        return;
+      }
+
+      // Call backend API to authenticate with wallet
+      const response = await api.post<WalletConnectResponse>('/auth/wallet-connect', {
+        walletAddress,
+        network,
+      }, false);
+
+      api.setToken(response.token);
+      setIsWalletModalOpen(false);
       toast.success(`Successfully connected to ${network}!`);
       navigate('/');
-    } else {
-      toast.error(`Failed to connect to ${network}. Please try again.`);
+    } catch (error: any) {
+      toast.error(error.message || `Failed to connect to ${network}. Please try again.`);
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -178,6 +239,7 @@ const Auth = () => {
                       onChange={(e) => setUsername(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
                       placeholder="Enter your username"
+                      disabled={isLoading}
                     />
                   </div>
 
@@ -189,14 +251,16 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
                       placeholder="Enter your password"
+                      disabled={isLoading}
                     />
                   </div>
 
                   <Button
                     type="submit"
+                    disabled={isLoading}
                     className="w-full h-12 text-base font-semibold gold-gradient text-primary-foreground rounded-xl hover:opacity-90 transition-opacity"
                   >
-                    Login
+                    {isLoading ? 'Logging in...' : 'Login'}
                   </Button>
 
                   <div className="relative my-6">
@@ -240,6 +304,7 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
                       placeholder="Enter your email"
+                      disabled={isLoading}
                     />
                   </div>
 
@@ -251,6 +316,7 @@ const Auth = () => {
                       onChange={(e) => setUsername(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
                       placeholder="Choose a username"
+                      disabled={isLoading}
                     />
                   </div>
 
@@ -262,6 +328,7 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
                       placeholder="Create a password"
+                      disabled={isLoading}
                     />
                   </div>
 
@@ -273,6 +340,7 @@ const Auth = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
                       placeholder="Confirm your password"
+                      disabled={isLoading}
                     />
                   </div>
 
@@ -285,12 +353,14 @@ const Auth = () => {
                         onChange={(e) => setVerificationCode(e.target.value)}
                         className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20 flex-1"
                         placeholder="Enter code"
+                        disabled={isLoading}
                       />
                       <Button
                         type="button"
                         onClick={handleSendCode}
                         variant="outline"
                         className="h-12 px-4 rounded-xl border-primary text-primary hover:bg-primary/10"
+                        disabled={isLoading}
                       >
                         <Send className="w-4 h-4" />
                       </Button>
@@ -299,9 +369,10 @@ const Auth = () => {
 
                   <Button
                     type="submit"
+                    disabled={isLoading}
                     className="w-full h-12 text-base font-semibold gold-gradient text-primary-foreground rounded-xl hover:opacity-90 transition-opacity mt-2"
                   >
-                    Create Account
+                    {isLoading ? 'Creating Account...' : 'Create Account'}
                   </Button>
 
                   <div className="text-center pt-4">

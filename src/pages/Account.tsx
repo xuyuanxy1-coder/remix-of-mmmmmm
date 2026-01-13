@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/tabs';
 import { useLoan } from '@/contexts/LoanContext';
 import { useKYC } from '@/contexts/KYCContext';
+import { api, RechargeRequest, WithdrawRequest, ApplicationResponse } from '@/lib/api';
 
 type AccountView = 'overview' | 'withdraw' | 'recharge' | 'exchange' | 'verification';
 
@@ -131,7 +132,7 @@ const Account = () => {
   const WITHDRAW_FEE_RATE = 0.005; // 0.5%
   const MIN_WITHDRAW_AMOUNT = 10;
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
       toast.error('Please enter a valid amount');
@@ -152,12 +153,23 @@ const Account = () => {
       return;
     }
 
-    const fee = amount * WITHDRAW_FEE_RATE;
-    const receiveAmount = amount - fee;
-    
-    toast.success(`Withdrawal request submitted. Amount: ${amount} USDT, Fee: ${fee.toFixed(2)} USDT, You will receive: ${receiveAmount.toFixed(2)} USDT`);
-    setWithdrawAmount('');
-    setWithdrawAddress('');
+    try {
+      const request: WithdrawRequest = {
+        amount,
+        address: withdrawAddress,
+        network: selectedNetwork,
+      };
+      await api.post<ApplicationResponse>('/applications/withdraw', request);
+      
+      const fee = amount * WITHDRAW_FEE_RATE;
+      const receiveAmount = amount - fee;
+      
+      toast.success(`Withdrawal request submitted. Amount: ${amount} USDT, Fee: ${fee.toFixed(2)} USDT, You will receive: ${receiveAmount.toFixed(2)} USDT`);
+      setWithdrawAmount('');
+      setWithdrawAddress('');
+    } catch (error: any) {
+      toast.error(error.message || 'Withdrawal request failed');
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,7 +188,7 @@ const Account = () => {
     }
   };
 
-  const handleRechargeSubmit = () => {
+  const handleRechargeSubmit = async () => {
     const amount = parseFloat(rechargeAmount);
     if (isNaN(amount) || amount <= 0) {
       toast.error('Please enter a valid amount');
@@ -186,10 +198,22 @@ const Account = () => {
       toast.error('Please upload a receipt image');
       return;
     }
-    toast.success('Recharge request submitted. Please wait for confirmation.');
-    setRechargeAmount('');
-    setReceiptImage(null);
-    setReceiptFileName('');
+
+    try {
+      const request: RechargeRequest = {
+        amount,
+        network: selectedRechargeNetwork,
+        receiptImage,
+      };
+      await api.post<ApplicationResponse>('/applications/recharge', request);
+      
+      toast.success('Recharge request submitted. Please wait for confirmation.');
+      setRechargeAmount('');
+      setReceiptImage(null);
+      setReceiptFileName('');
+    } catch (error: any) {
+      toast.error(error.message || 'Recharge request failed');
+    }
   };
 
   const renderBreadcrumb = () => {

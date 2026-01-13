@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { TrendingUp, TrendingDown, Clock, DollarSign, Percent } from 'lucide-react';
+import { api, SmartTradeRequest, SmartTradeResponse } from '@/lib/api';
 
 interface TradingPanelProps {
   symbol: string;
@@ -32,7 +33,7 @@ const TIME_OPTIONS = [
 const FEE_RATE = 0.01; // 1% fee
 
 const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
-  const { getBalance, updateBalance } = useAssets();
+  const { getBalance, updateBalance, refreshAssets } = useAssets();
   const { addTrade } = useTradeHistory();
   const [direction, setDirection] = useState<'long' | 'short'>('long');
   const [usdtAmount, setUsdtAmount] = useState('');
@@ -40,6 +41,7 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
   const [activeTrade, setActiveTrade] = useState<ActiveTrade | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [settlementPrice, setSettlementPrice] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const usdtBalance = getBalance('USDT');
 
@@ -109,15 +111,18 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
       isWin,
     });
 
+    // Refresh assets from server
+    refreshAssets();
+
     // Clear trade after showing result for a moment
     setTimeout(() => {
       setActiveTrade(null);
       setSettlementPrice(null);
       setCountdown(0);
     }, 3000);
-  }, [activeTrade, updateBalance, addTrade, symbol]);
+  }, [activeTrade, updateBalance, addTrade, symbol, refreshAssets]);
 
-  const handleTrade = () => {
+  const handleTrade = async () => {
     const usdtNum = parseFloat(usdtAmount);
 
     if (isNaN(usdtNum) || usdtNum <= 0) {
@@ -133,28 +138,46 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
       return;
     }
 
-    // Deduct amount immediately
-    updateBalance('USDT', -totalCost);
+    setIsSubmitting(true);
 
-    const trade: ActiveTrade = {
-      id: Date.now().toString(),
-      direction,
-      amount: usdtNum,
-      entryPrice: currentPrice,
-      duration: selectedTime.duration,
-      profitRate: selectedTime.profitRate,
-      startTime: Date.now(),
-      fee,
-    };
+    try {
+      // Call backend API to create smart trade
+      const request: SmartTradeRequest = {
+        pair: symbol,
+        side: direction,
+        amount: usdtNum,
+        duration: selectedTime.duration,
+      };
 
-    setActiveTrade(trade);
-    setCountdown(selectedTime.duration);
-    setUsdtAmount('');
+      const response = await api.post<SmartTradeResponse>('/trades/smart', request);
 
-    toast.success(
-      `${direction === 'long' ? '📈 Long' : '📉 Short'} position opened! ${selectedTime.label} @ $${currentPrice.toLocaleString()}`,
-      { duration: 3000 }
-    );
+      // Deduct amount immediately (local update)
+      updateBalance('USDT', -totalCost);
+
+      const trade: ActiveTrade = {
+        id: response.id || Date.now().toString(),
+        direction,
+        amount: usdtNum,
+        entryPrice: response.entryPrice || currentPrice,
+        duration: response.duration || selectedTime.duration,
+        profitRate: response.profitRate || selectedTime.profitRate,
+        startTime: response.startTime || Date.now(),
+        fee: response.fee || fee,
+      };
+
+      setActiveTrade(trade);
+      setCountdown(selectedTime.duration);
+      setUsdtAmount('');
+
+      toast.success(
+        `${direction === 'long' ? '📈 Long' : '📉 Short'} position opened! ${selectedTime.label} @ $${currentPrice.toLocaleString()}`,
+        { duration: 3000 }
+      );
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to place trade');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const setPercentage = (pct: number) => {
@@ -332,6 +355,7 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
             value={usdtAmount}
             onChange={(e) => setUsdtAmount(e.target.value)}
             placeholder="0.00"
+            disabled={isSubmitting}
           />
           <div className="flex gap-2 mt-2">
             {[0.25, 0.5, 0.75, 1].map((pct) => (
@@ -339,6 +363,7 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
                 key={pct}
                 onClick={() => setPercentage(pct)}
                 className="flex-1 text-xs py-1 rounded bg-muted hover:bg-muted/80 transition-colors"
+                disabled={isSubmitting}
               >
                 {pct * 100}%
               </button>
@@ -366,6 +391,7 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
 
         <Button
           onClick={handleTrade}
+          disabled={isSubmitting}
           className={`w-full ${
             direction === 'long' 
               ? 'bg-[hsl(145,60%,45%)] hover:bg-[hsl(145,60%,40%)]' 
@@ -373,8 +399,7 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
           } text-white`}
         >
           <TrendingUp className="w-4 h-4 mr-2" />
-          Buy Now
-        
+          {isSubmitting ? 'Placing Order...' : 'Buy Now'}
         </Button>
       </div>
     </div>

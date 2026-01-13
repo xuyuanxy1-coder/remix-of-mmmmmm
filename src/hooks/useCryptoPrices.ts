@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { api, PriceData } from '@/lib/api';
 
 interface CryptoPrice {
   id: string;
@@ -19,7 +20,7 @@ interface PriceState {
   isDelayed: boolean;
 }
 
-// CoinGecko ID mapping
+// Coin config mapping
 const COIN_CONFIG: Record<string, { id: string; name: string; icon: string }> = {
   BTC: { id: 'bitcoin', name: 'Bitcoin', icon: '₿' },
   ETH: { id: 'ethereum', name: 'Ethereum', icon: '⟠' },
@@ -39,9 +40,7 @@ const COIN_CONFIG: Record<string, { id: string; name: string; icon: string }> = 
   ARB: { id: 'arbitrum', name: 'Arbitrum', icon: '🔷' },
 };
 
-const COINGECKO_IDS = Object.values(COIN_CONFIG).map(c => c.id).join(',');
-const API_URL = `https://api.coingecko.com/api/v3/simple/price?ids=${COINGECKO_IDS}&vs_currencies=usd&include_24hr_change=true`;
-
+const COIN_IDS = Object.values(COIN_CONFIG).map(c => c.id).join(',');
 const REFRESH_INTERVAL = 15000; // 15 seconds
 
 // Fallback prices in case API fails
@@ -77,13 +76,12 @@ export const useCryptoPrices = () => {
 
   const fetchPrices = useCallback(async () => {
     try {
-      const response = await fetch(API_URL);
+      // Call backend API: GET /api/prices?ids=bitcoin,ethereum,solana...
+      const data = await api.get<Record<string, PriceData>>(
+        `/prices?ids=${COIN_IDS}`,
+        false // No auth required for price data
+      );
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch prices');
-      }
-
-      const data = await response.json();
       lastSuccessfulFetchRef.current = Date.now();
 
       const newPrices: Record<string, CryptoPrice> = {};

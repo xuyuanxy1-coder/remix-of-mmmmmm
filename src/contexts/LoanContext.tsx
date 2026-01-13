@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { api, LoanApplicationRequest, RepaymentRequest, ApplicationResponse } from '@/lib/api';
 
 export interface RepaymentRecord {
   id: string;
@@ -29,13 +30,14 @@ export interface Loan {
 
 interface LoanContextType {
   loans: Loan[];
-  applyLoan: (amount: number, currency: string, guarantorId?: string) => boolean;
-  submitRepayment: (loanId: string, amount: number, receiptImage: string) => boolean;
+  applyLoan: (amount: number, currency: string, guarantorId?: string) => Promise<boolean>;
+  submitRepayment: (loanId: string, amount: number, receiptImage: string) => Promise<boolean>;
   approveRepayment: (loanId: string, repaymentId: string) => boolean;
   rejectRepayment: (loanId: string, repaymentId: string) => boolean;
   calculateOwed: (loan: Loan) => { principal: number; interest: number; penalty: number; total: number; daysElapsed: number; remainingPrincipal: number; remainingInterest: number; remainingPenalty: number; remainingTotal: number };
   loanHistory: Loan[];
   pendingRepayments: RepaymentRecord[];
+  refreshLoans: () => Promise<void>;
 }
 
 export const MIN_LOAN_AMOUNT = 5000;
@@ -45,6 +47,28 @@ const LoanContext = createContext<LoanContextType | undefined>(undefined);
 
 export const LoanProvider = ({ children }: { children: ReactNode }) => {
   const [loans, setLoans] = useState<Loan[]>([]);
+
+  const refreshLoans = async () => {
+    if (!api.isAuthenticated()) return;
+    
+    try {
+      const response = await api.get<{ loans: Loan[] }>('/loans');
+      if (response.loans) {
+        setLoans(response.loans.map(l => ({
+          ...l,
+          borrowDate: new Date(l.borrowDate),
+          repaidDate: l.repaidDate ? new Date(l.repaidDate) : undefined,
+          repayments: l.repayments?.map(r => ({
+            ...r,
+            submittedAt: new Date(r.submittedAt),
+            reviewedAt: r.reviewedAt ? new Date(r.reviewedAt) : undefined,
+          })) || [],
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch loans:', error);
+    }
+  };
 
   const calculateOwed = (loan: Loan) => {
     const now = new Date();
@@ -84,50 +108,70 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const applyLoan = (amount: number, currency: string, guarantorId?: string): boolean => {
+  const applyLoan = async (amount: number, currency: string, guarantorId?: string): Promise<boolean> => {
     if (amount < MIN_LOAN_AMOUNT || amount > MAX_LOAN_AMOUNT) return false;
     
-    const newLoan: Loan = {
-      id: Date.now().toString(),
-      amount,
-      currency,
-      borrowDate: new Date(),
-      status: 'active',
-      guarantorId: guarantorId || undefined,
-      interestPaid: 0,
-      penaltyPaid: 0,
-      principalPaid: 0,
-      repayments: []
-    };
+    try {
+      const request: LoanApplicationRequest = { amount };
+      await api.post<ApplicationResponse>('/applications/loan', request);
+      
+      // Add to local state (pending loan)
+      const newLoan: Loan = {
+        id: Date.now().toString(),
+        amount,
+        currency,
+        borrowDate: new Date(),
+        status: 'active',
+        guarantorId: guarantorId || undefined,
+        interestPaid: 0,
+        penaltyPaid: 0,
+        principalPaid: 0,
+        repayments: []
+      };
 
-    setLoans(prev => [...prev, newLoan]);
-    // Note: Balance is NOT updated here - loan amount should be added by admin after approval
-    return true;
+      setLoans(prev => [...prev, newLoan]);
+      return true;
+    } catch (error) {
+      console.error('Loan application failed:', error);
+      return false;
+    }
   };
 
-  const submitRepayment = (loanId: string, amount: number, receiptImage: string): boolean => {
+  const submitRepayment = async (loanId: string, amount: number, receiptImage: string): Promise<boolean> => {
     const loan = loans.find(l => l.id === loanId);
     if (!loan || loan.status === 'paid') return false;
 
-    const repayment: RepaymentRecord = {
-      id: `rep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      loanId,
-      amount,
-      receiptImage,
-      status: 'pending',
-      submittedAt: new Date(),
-      appliedToInterest: 0,
-      appliedToPenalty: 0,
-      appliedToPrincipal: 0
-    };
+    try {
+      const request: RepaymentRequest = {
+        amount,
+        loanId,
+        receiptImage,
+      };
+      await api.post<ApplicationResponse>('/applications/repayment', request);
 
-    setLoans(prev => prev.map(l => 
-      l.id === loanId 
-        ? { ...l, repayments: [...l.repayments, repayment] }
-        : l
-    ));
+      const repayment: RepaymentRecord = {
+        id: `rep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        loanId,
+        amount,
+        receiptImage,
+        status: 'pending',
+        submittedAt: new Date(),
+        appliedToInterest: 0,
+        appliedToPenalty: 0,
+        appliedToPrincipal: 0
+      };
 
-    return true;
+      setLoans(prev => prev.map(l => 
+        l.id === loanId 
+          ? { ...l, repayments: [...l.repayments, repayment] }
+          : l
+      ));
+
+      return true;
+    } catch (error) {
+      console.error('Repayment submission failed:', error);
+      return false;
+    }
   };
 
   const approveRepayment = (loanId: string, repaymentId: string): boolean => {
@@ -236,7 +280,8 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
       rejectRepayment,
       calculateOwed, 
       loanHistory,
-      pendingRepayments
+      pendingRepayments,
+      refreshLoans
     }}>
       {children}
     </LoanContext.Provider>
