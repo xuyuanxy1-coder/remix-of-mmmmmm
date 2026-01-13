@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BarChart3, TrendingUp, Landmark, User } from 'lucide-react';
+import { Home, BarChart3, TrendingUp, Landmark, User, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { label: 'Home', href: '/', icon: Home },
@@ -11,18 +12,26 @@ const navItems = [
 
 const BottomNav = () => {
   const location = useLocation();
+  const { isAdmin } = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/') {
       return location.pathname === '/';
     }
+    if (href === '/admin') {
+      return location.pathname === '/admin';
+    }
     return location.pathname.startsWith(href.split('/').slice(0, 2).join('/'));
   };
+
+  const items = isAdmin 
+    ? [...navItems.slice(0, 4), { label: 'Admin', href: '/admin', icon: Shield }]
+    : navItems;
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           

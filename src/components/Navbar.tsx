@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ChevronDown, Menu, X, MessageCircle } from 'lucide-react';
+import { ChevronDown, Menu, X, MessageCircle, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import MetaMaskLogo from '@/components/MetaMaskLogo';
 import NotificationBell from '@/components/NotificationBell';
 import { useTawkTo } from '@/hooks/useTawkTo';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -18,6 +19,7 @@ const navItems = [
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { openChat } = useTawkTo();
+  const { isAdmin, isAuthenticated } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -55,16 +57,32 @@ const Navbar = () => {
               <MessageCircle className="w-4 h-4" />
               Customer Service
             </button>
-            <Link to="/auth">
-              <Button variant="outline" className="btn-outline border-foreground/20">
-                Login
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button className="btn-primary">
-                Sign up
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link to="/admin" className="nav-link flex items-center gap-1 text-primary">
+                <Shield className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
+            {isAuthenticated ? (
+              <Link to="/account">
+                <Button className="btn-primary">
+                  Account
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="outline" className="btn-outline border-foreground/20">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button className="btn-primary">
+                    Sign up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -110,17 +128,37 @@ const Navbar = () => {
                 <MessageCircle className="w-5 h-5" />
                 Customer Service
               </button>
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className="nav-link py-2 flex items-center gap-2 text-primary"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Shield className="w-5 h-5" />
+                  Admin Panel
+                </Link>
+              )}
               <div className="flex gap-3 pt-4 border-t border-border">
-                <Link to="/auth" className="flex-1">
-                  <Button variant="outline" className="btn-outline w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/auth" className="flex-1">
-                  <Button className="btn-primary w-full">
-                    Sign up
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <Link to="/account" className="flex-1">
+                    <Button className="btn-primary w-full">
+                      Account
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/auth" className="flex-1">
+                      <Button variant="outline" className="btn-outline w-full">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/auth" className="flex-1">
+                      <Button className="btn-primary w-full">
+                        Sign up
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
