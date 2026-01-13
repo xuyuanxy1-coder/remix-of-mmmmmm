@@ -112,21 +112,34 @@ const Account = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const WITHDRAW_FEE_RATE = 0.005; // 0.5%
+  const MIN_WITHDRAW_AMOUNT = 10;
+
   const handleWithdraw = () => {
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
       toast.error('Please enter a valid amount');
       return;
     }
-    if (amount < 10) {
-      toast.error('Minimum withdrawal is 10 USDT');
+    if (amount < MIN_WITHDRAW_AMOUNT) {
+      toast.error(`Minimum withdrawal is ${MIN_WITHDRAW_AMOUNT} USDT`);
       return;
     }
     if (!withdrawAddress) {
       toast.error('Please enter a receiving address');
       return;
     }
-    toast.success('Withdrawal request submitted. Please wait for processing.');
+    
+    const usdtBalance = getBalance('USDT');
+    if (amount > usdtBalance) {
+      toast.error('Insufficient balance');
+      return;
+    }
+
+    const fee = amount * WITHDRAW_FEE_RATE;
+    const receiveAmount = amount - fee;
+    
+    toast.success(`Withdrawal request submitted. Amount: ${amount} USDT, Fee: ${fee.toFixed(2)} USDT, You will receive: ${receiveAmount.toFixed(2)} USDT`);
     setWithdrawAmount('');
     setWithdrawAddress('');
   };
@@ -378,7 +391,7 @@ const Account = () => {
         <div className="space-y-3 text-sm">
           <div className="flex items-start gap-3">
             <Info className="w-4 h-4 text-muted-foreground mt-0.5" />
-            <span>Fee: <span className="font-medium">0.3%</span> (Deducted after network confirmation)</span>
+            <span>Fee: <span className="font-medium">0.5%</span> of withdrawal amount</span>
           </div>
           <div className="flex items-start gap-3">
             <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
