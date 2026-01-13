@@ -4,8 +4,8 @@ const features = [
   {
     icon: TrendingUp,
     badge: 'Lowest transactions fees < 0.3%',
-    title: 'Trade all assets in one place',
-    description: 'Forex, crypto, stocks, indices, commodities',
+    title: 'Trade all crypto in one place',
+    description: 'BTC, ETH, SOL, XRP, and 350+ cryptocurrencies',
     color: 'bg-blue-500/10 text-blue-600',
   },
   {
