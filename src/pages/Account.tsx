@@ -80,6 +80,11 @@ const Account = () => {
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [receiptFileName, setReceiptFileName] = useState('');
   
+  // Exchange state - must be at top level
+  const [fromCurrency, setFromCurrency] = useState('usdt');
+  const [toCurrency, setToCurrency] = useState('btc');
+  const [exchangeAmount, setExchangeAmount] = useState('');
+  
   const { assets, getBalance } = useAssets();
   const { getPrice } = useCryptoPrices();
   const { loans } = useLoan();
@@ -528,52 +533,48 @@ const Account = () => {
     </div>
   );
 
+  const exchangeCurrencies = [
+    { value: 'usdt', label: 'USDT' },
+    { value: 'btc', label: 'BTC' },
+    { value: 'eth', label: 'ETH' },
+    { value: 'bnb', label: 'BNB' },
+    { value: 'sol', label: 'SOL' },
+    { value: 'xrp', label: 'XRP' },
+    { value: 'ada', label: 'ADA' },
+    { value: 'doge', label: 'DOGE' },
+    { value: 'dot', label: 'DOT' },
+    { value: 'ltc', label: 'LTC' },
+  ];
+
+  // Get prices for calculation
+  const fromPrice = fromCurrency === 'usdt' ? 1 : (getPrice(fromCurrency.toUpperCase())?.price || 0);
+  const toPrice = toCurrency === 'usdt' ? 1 : (getPrice(toCurrency.toUpperCase())?.price || 0);
+  
+  const exchangeRate = toPrice > 0 ? fromPrice / toPrice : 0;
+  const toAmount = exchangeAmount && exchangeRate > 0 ? (parseFloat(exchangeAmount) * exchangeRate * 0.999).toFixed(8) : '';
+
+  const handleSwapCurrencies = () => {
+    const temp = fromCurrency;
+    setFromCurrency(toCurrency);
+    setToCurrency(temp);
+    setExchangeAmount('');
+  };
+
+  const handleExchange = () => {
+    if (!exchangeAmount || parseFloat(exchangeAmount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    const fromBalance = getBalance(fromCurrency.toUpperCase());
+    if (parseFloat(exchangeAmount) > fromBalance) {
+      toast.error('Insufficient balance');
+      return;
+    }
+    toast.success(`Exchange request submitted: ${exchangeAmount} ${fromCurrency.toUpperCase()} → ${toAmount} ${toCurrency.toUpperCase()}`);
+    setExchangeAmount('');
+  };
+
   const renderExchange = () => {
-    const [fromCurrency, setFromCurrency] = useState('usdt');
-    const [toCurrency, setToCurrency] = useState('btc');
-    const [fromAmount, setFromAmount] = useState('');
-    
-    const exchangeCurrencies = [
-      { value: 'usdt', label: 'USDT' },
-      { value: 'btc', label: 'BTC' },
-      { value: 'eth', label: 'ETH' },
-      { value: 'bnb', label: 'BNB' },
-      { value: 'sol', label: 'SOL' },
-      { value: 'xrp', label: 'XRP' },
-      { value: 'ada', label: 'ADA' },
-      { value: 'doge', label: 'DOGE' },
-      { value: 'dot', label: 'DOT' },
-      { value: 'ltc', label: 'LTC' },
-    ];
-
-    // Get prices for calculation
-    const fromPrice = fromCurrency === 'usdt' ? 1 : (getPrice(fromCurrency.toUpperCase())?.price || 0);
-    const toPrice = toCurrency === 'usdt' ? 1 : (getPrice(toCurrency.toUpperCase())?.price || 0);
-    
-    const exchangeRate = toPrice > 0 ? fromPrice / toPrice : 0;
-    const toAmount = fromAmount && exchangeRate > 0 ? (parseFloat(fromAmount) * exchangeRate * 0.999).toFixed(8) : '';
-
-    const handleSwapCurrencies = () => {
-      const temp = fromCurrency;
-      setFromCurrency(toCurrency);
-      setToCurrency(temp);
-      setFromAmount('');
-    };
-
-    const handleExchange = () => {
-      if (!fromAmount || parseFloat(fromAmount) <= 0) {
-        toast.error('Please enter a valid amount');
-        return;
-      }
-      const fromBalance = getBalance(fromCurrency.toUpperCase());
-      if (parseFloat(fromAmount) > fromBalance) {
-        toast.error('Insufficient balance');
-        return;
-      }
-      toast.success(`Exchange request submitted: ${fromAmount} ${fromCurrency.toUpperCase()} → ${toAmount} ${toCurrency.toUpperCase()}`);
-      setFromAmount('');
-    };
-
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-card border border-border rounded-2xl p-6">
@@ -598,8 +599,8 @@ const Account = () => {
                   type="number" 
                   placeholder="Amount" 
                   className="flex-1" 
-                  value={fromAmount}
-                  onChange={(e) => setFromAmount(e.target.value)}
+                  value={exchangeAmount}
+                  onChange={(e) => setExchangeAmount(e.target.value)}
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
