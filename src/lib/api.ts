@@ -1,5 +1,6 @@
 // API Client with token handling and error management
-const API_BASE = '/api';
+// 临时直连后端测试，成功后改回 '/api'
+const API_BASE = 'http://8.209.75.7:3001/api';
 
 class ApiClient {
   private getToken(): string | null {
