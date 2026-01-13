@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import KlineChart from '@/components/KlineChart';
 import TradingPanel from '@/components/TradingPanel';
 import UserAssets from '@/components/UserAssets';
+import TradeHistory from '@/components/TradeHistory';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,6 +121,11 @@ const TradePage = () => {
               <TradingPanel symbol={upperSymbol} currentPrice={displayCrypto.price} />
               <UserAssets />
             </div>
+          </div>
+
+          {/* Trade History - Full Width Below */}
+          <div className="mt-6">
+            <TradeHistory />
           </div>
         </div>
       </main>

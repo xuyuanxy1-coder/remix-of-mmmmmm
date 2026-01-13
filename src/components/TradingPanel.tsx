@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAssets } from '@/contexts/AssetsContext';
+import { useTradeHistory } from '@/contexts/TradeHistoryContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ const FEE_RATE = 0.01; // 1% fee
 
 const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
   const { getBalance, updateBalance } = useAssets();
+  const { addTrade } = useTradeHistory();
   const [direction, setDirection] = useState<'long' | 'short'>('long');
   const [usdtAmount, setUsdtAmount] = useState('');
   const [selectedTime, setSelectedTime] = useState(TIME_OPTIONS[0]);
@@ -75,9 +77,10 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
       : finalPrice < activeTrade.entryPrice;
 
     const netAmount = activeTrade.amount - activeTrade.fee;
+    let profit = 0;
     
     if (isWin) {
-      const profit = netAmount * activeTrade.profitRate;
+      profit = netAmount * activeTrade.profitRate;
       const totalReturn = activeTrade.amount + profit;
       updateBalance('USDT', totalReturn);
       toast.success(
@@ -85,11 +88,26 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
         { duration: 5000 }
       );
     } else {
+      profit = -activeTrade.amount;
       toast.error(
         `Trade Lost. -${activeTrade.amount.toFixed(2)} USDT`,
         { duration: 5000 }
       );
     }
+
+    // Add to trade history
+    addTrade({
+      symbol,
+      direction: activeTrade.direction,
+      amount: activeTrade.amount,
+      entryPrice: activeTrade.entryPrice,
+      settlementPrice: finalPrice,
+      duration: activeTrade.duration,
+      profitRate: activeTrade.profitRate,
+      fee: activeTrade.fee,
+      profit,
+      isWin,
+    });
 
     // Clear trade after showing result for a moment
     setTimeout(() => {
@@ -97,7 +115,7 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
       setSettlementPrice(null);
       setCountdown(0);
     }, 3000);
-  }, [activeTrade, updateBalance]);
+  }, [activeTrade, updateBalance, addTrade, symbol]);
 
   const handleTrade = () => {
     const usdtNum = parseFloat(usdtAmount);
