@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-const TAWK_PROPERTY_ID = '6966690dd7f0511983c59b2c';
+const TAWK_PROPERTY_ID = '6966670dd7f0511983c59b2c';
 const TAWK_WIDGET_ID = '1jes053tk';
 
 export const useTawkTo = () => {
