@@ -1,31 +1,31 @@
-import { TrendingUp, TrendingDown } from 'lucide-react';
-
-const marketData = [
-  { name: 'BTC', icon: '₿', change: 1.51, price: 92027.52 },
-  { name: 'ETH', icon: '⟠', change: 0.94, price: 3138.56 },
-  { name: 'BNB', icon: '🟡', change: 1.09, price: 910.06 },
-  { name: 'SOL', icon: '☀️', change: 1.58, price: 141.83 },
-  { name: 'XRP', icon: '💧', change: 2.34, price: 2.18 },
-  { name: 'ADA', icon: '🔵', change: -0.85, price: 0.68 },
-  { name: 'DOGE', icon: '🐕', change: 3.21, price: 0.32 },
-  { name: 'AVAX', icon: '🔺', change: 1.87, price: 35.42 },
-  { name: 'DOT', icon: '⚪', change: -1.23, price: 6.85 },
-  { name: 'MATIC', icon: '🟣', change: 0.76, price: 0.89 },
-  { name: 'LINK', icon: '🔗', change: 1.30, price: 13.28 },
-  { name: 'UNI', icon: '🦄', change: 1.88, price: 5.47 },
-  { name: 'SHIB', icon: '🐶', change: 4.52, price: 0.000022 },
-  { name: 'LTC', icon: '🪙', change: -0.45, price: 84.32 },
-  { name: 'ATOM', icon: '⚛️', change: 2.15, price: 8.76 },
-  { name: 'ARB', icon: '🔷', change: 3.53, price: 0.21 },
-];
+import { TrendingUp, TrendingDown, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useCryptoPrices } from '@/hooks/useCryptoPrices';
 
 const MarketTable = () => {
+  const { getAllPrices, isLoading, isDelayed, refresh } = useCryptoPrices();
+  const prices = getAllPrices();
+
   return (
     <section id="market" className="py-16 lg:py-24 bg-muted/20">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="section-title">Live Market</h2>
-          <p className="text-muted-foreground mt-2">Track real-time prices and changes</p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <p className="text-muted-foreground">Track real-time prices and changes</p>
+            {isDelayed && (
+              <span className="inline-flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full">
+                <AlertTriangle className="w-3 h-3" />
+                Data delayed
+              </span>
+            )}
+            <button 
+              onClick={refresh}
+              className="p-1.5 rounded-full hover:bg-muted transition-colors"
+              title="Refresh prices"
+            >
+              <RefreshCw className={`w-4 h-4 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -39,37 +39,53 @@ const MarketTable = () => {
 
           {/* Table Body */}
           <div className="divide-y divide-border">
-            {marketData.map((item, index) => (
-              <div 
-                key={index}
-                className="grid grid-cols-4 gap-4 py-4 px-6 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="font-medium">{item.name}</span>
-                </div>
-                
-                <div className={`flex items-center justify-center gap-1 ${item.change >= 0 ? 'price-up' : 'price-down'}`}>
-                  {item.change >= 0 ? (
-                    <TrendingUp className="w-4 h-4" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4" />
-                  )}
-                  <span className="font-medium">{item.change >= 0 ? '+' : ''}{item.change}%</span>
-                </div>
-                
-                <div className="flex items-center justify-center">
-                  <MiniChart positive={item.change >= 0} />
-                </div>
-                
-                <div className="text-right font-medium">
-                  ${item.price.toLocaleString()}
-                </div>
+            {prices.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                {isLoading ? 'Loading prices...' : 'No data available'}
               </div>
-            ))}
+            ) : (
+              prices.map((item) => (
+                <div 
+                  key={item.symbol}
+                  className={`grid grid-cols-4 gap-4 py-4 px-6 hover:bg-muted/30 transition-colors ${
+                    item.priceDirection === 'up' ? 'price-animate-up' : 
+                    item.priceDirection === 'down' ? 'price-animate-down' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="font-medium">{item.symbol}</span>
+                  </div>
+                  
+                  <div className={`flex items-center justify-center gap-1 ${item.change24h >= 0 ? 'price-up' : 'price-down'}`}>
+                    {item.change24h >= 0 ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                    <span className="font-medium">{item.change24h >= 0 ? '+' : ''}{item.change24h.toFixed(2)}%</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-center">
+                    <MiniChart positive={item.change24h >= 0} />
+                  </div>
+                  
+                  <div className={`text-right font-medium flex items-center justify-end gap-1 ${
+                    item.priceDirection === 'up' ? 'text-[hsl(145,60%,45%)]' : 
+                    item.priceDirection === 'down' ? 'text-[hsl(0,70%,55%)]' : ''
+                  }`}>
+                    {item.priceDirection === 'up' && <TrendingUp className="w-3 h-3" />}
+                    {item.priceDirection === 'down' && <TrendingDown className="w-3 h-3" />}
+                    ${item.price.toLocaleString(undefined, { 
+                      minimumFractionDigits: item.price < 1 ? 6 : 2,
+                      maximumFractionDigits: item.price < 1 ? 6 : 2
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
-
       </div>
     </section>
   );

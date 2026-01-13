@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown, AlertTriangle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import KlineChart from '@/components/KlineChart';
@@ -12,36 +12,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-
-const cryptoData: Record<string, { name: string; icon: string; price: number; change: number }> = {
-  BTC: { name: 'Bitcoin', icon: '₿', price: 92027.52, change: 1.51 },
-  ETH: { name: 'Ethereum', icon: '⟠', price: 3138.56, change: 0.94 },
-  BNB: { name: 'BNB', icon: '🟡', price: 910.06, change: 1.09 },
-  SOL: { name: 'Solana', icon: '☀️', price: 141.83, change: 1.58 },
-  XRP: { name: 'XRP', icon: '💧', price: 2.18, change: 2.34 },
-  ADA: { name: 'Cardano', icon: '🔵', price: 0.68, change: -0.85 },
-  DOGE: { name: 'Dogecoin', icon: '🐕', price: 0.32, change: 3.21 },
-  AVAX: { name: 'Avalanche', icon: '🔺', price: 35.42, change: 1.87 },
-  DOT: { name: 'Polkadot', icon: '⚪', price: 6.85, change: -1.23 },
-  MATIC: { name: 'Polygon', icon: '🟣', price: 0.89, change: 0.76 },
-  LINK: { name: 'Chainlink', icon: '🔗', price: 13.28, change: 1.30 },
-  UNI: { name: 'Uniswap', icon: '🦄', price: 5.47, change: 1.88 },
-  SHIB: { name: 'Shiba Inu', icon: '🐶', price: 0.000022, change: 4.52 },
-  LTC: { name: 'Litecoin', icon: '🪙', price: 84.32, change: -0.45 },
-  ATOM: { name: 'Cosmos', icon: '⚛️', price: 8.76, change: 2.15 },
-  ARB: { name: 'Arbitrum', icon: '🔷', price: 0.21, change: 3.53 },
-};
-
-const cryptoList = Object.entries(cryptoData).map(([symbol, data]) => ({
-  symbol,
-  ...data,
-}));
+import { useCryptoPrices } from '@/hooks/useCryptoPrices';
 
 const TradePage = () => {
   const { symbol = 'BTC' } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
-  const crypto = cryptoData[symbol.toUpperCase()] || cryptoData.BTC;
+  const { getPrice, getAllPrices, isDelayed } = useCryptoPrices();
+  
   const upperSymbol = symbol.toUpperCase();
+  const crypto = getPrice(upperSymbol);
+  const allPrices = getAllPrices();
+
+  // Fallback data if price not yet loaded
+  const displayCrypto = crypto || {
+    name: upperSymbol,
+    icon: '💰',
+    price: 0,
+    change24h: 0,
+    priceDirection: 'stable' as const,
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,17 +46,17 @@ const TradePage = () => {
             </Link>
             
             <div className="flex items-center gap-4">
-              <span className="text-4xl">{crypto.icon}</span>
+              <span className="text-4xl">{displayCrypto.icon}</span>
               <div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="text-2xl font-display font-semibold p-0 h-auto hover:bg-transparent">
-                      {crypto.name} ({upperSymbol})
+                      {displayCrypto.name} ({upperSymbol})
                       <ChevronDown className="w-5 h-5 ml-2" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-64 max-h-80 overflow-y-auto">
-                    {cryptoList.map((item) => (
+                    {allPrices.map((item) => (
                       <DropdownMenuItem
                         key={item.symbol}
                         onClick={() => navigate(`/trade/${item.symbol}`)}
@@ -78,25 +67,39 @@ const TradePage = () => {
                           <span>{item.name}</span>
                           <span className="text-muted-foreground">({item.symbol})</span>
                         </div>
-                        <span className={item.change >= 0 ? 'text-[hsl(145,60%,45%)]' : 'text-[hsl(0,70%,55%)]'}>
-                          {item.change >= 0 ? '+' : ''}{item.change}%
+                        <span className={item.change24h >= 0 ? 'text-[hsl(145,60%,45%)]' : 'text-[hsl(0,70%,55%)]'}>
+                          {item.change24h >= 0 ? '+' : ''}{item.change24h.toFixed(2)}%
                         </span>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xl font-medium">
-                    ${crypto.price.toLocaleString()}
+                  <span className={`text-xl font-medium flex items-center gap-1 ${
+                    displayCrypto.priceDirection === 'up' ? 'text-[hsl(145,60%,45%)]' : 
+                    displayCrypto.priceDirection === 'down' ? 'text-[hsl(0,70%,55%)]' : ''
+                  }`}>
+                    {displayCrypto.priceDirection === 'up' && <TrendingUp className="w-4 h-4" />}
+                    {displayCrypto.priceDirection === 'down' && <TrendingDown className="w-4 h-4" />}
+                    ${displayCrypto.price.toLocaleString(undefined, {
+                      minimumFractionDigits: displayCrypto.price < 1 ? 6 : 2,
+                      maximumFractionDigits: displayCrypto.price < 1 ? 6 : 2
+                    })}
                   </span>
-                  <span className={`flex items-center gap-1 text-sm ${crypto.change >= 0 ? 'price-up' : 'price-down'}`}>
-                    {crypto.change >= 0 ? (
+                  <span className={`flex items-center gap-1 text-sm ${displayCrypto.change24h >= 0 ? 'price-up' : 'price-down'}`}>
+                    {displayCrypto.change24h >= 0 ? (
                       <TrendingUp className="w-4 h-4" />
                     ) : (
                       <TrendingDown className="w-4 h-4" />
                     )}
-                    {crypto.change >= 0 ? '+' : ''}{crypto.change}%
+                    {displayCrypto.change24h >= 0 ? '+' : ''}{displayCrypto.change24h.toFixed(2)}%
                   </span>
+                  {isDelayed && (
+                    <span className="inline-flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full">
+                      <AlertTriangle className="w-3 h-3" />
+                      Data delayed
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -114,7 +117,7 @@ const TradePage = () => {
 
             {/* Trading Panel & Assets */}
             <div className="space-y-6">
-              <TradingPanel symbol={upperSymbol} currentPrice={crypto.price} />
+              <TradingPanel symbol={upperSymbol} currentPrice={displayCrypto.price} />
               <UserAssets />
             </div>
           </div>
