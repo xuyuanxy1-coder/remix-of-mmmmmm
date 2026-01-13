@@ -9,7 +9,7 @@ import { useTawkTo } from '@/hooks/useTawkTo';
 
 const navItems = [
   { label: 'Home', href: '/' },
-  { label: 'Market', href: '/#market' },
+  { label: 'Market', href: '/market' },
   { label: 'Smart trading', href: '/trade/BTC' },
   { label: 'Loan', href: '/loan' },
   { label: 'Account', href: '/account' },

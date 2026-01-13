@@ -3,7 +3,7 @@ import { Home, BarChart3, TrendingUp, Landmark, User } from 'lucide-react';
 
 const navItems = [
   { label: 'Home', href: '/', icon: Home },
-  { label: 'Market', href: '/#market', icon: BarChart3 },
+  { label: 'Market', href: '/market', icon: BarChart3 },
   { label: 'Trade', href: '/trade/BTC', icon: TrendingUp },
   { label: 'Loan', href: '/loan', icon: Landmark },
   { label: 'Account', href: '/account', icon: User },
@@ -16,9 +16,6 @@ const BottomNav = () => {
     if (href === '/') {
       return location.pathname === '/';
     }
-    if (href.includes('#')) {
-      return location.pathname === '/' && location.hash === '#market';
-    }
     return location.pathname.startsWith(href.split('/').slice(0, 2).join('/'));
   };
 
@@ -29,7 +26,7 @@ const BottomNav = () => {
           const Icon = item.icon;
           const active = isActive(item.href);
           
-          return item.href.startsWith('/') && !item.href.includes('#') ? (
+          return (
             <Link
               key={item.label}
               to={item.href}
@@ -40,17 +37,6 @@ const BottomNav = () => {
               <Icon className="w-5 h-5" />
               <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
-          ) : (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors ${
-                active ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </a>
           );
         })}
       </div>

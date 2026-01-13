@@ -10,6 +10,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { TradeHistoryProvider } from "@/contexts/TradeHistoryContext";
 import { KYCProvider } from "@/contexts/KYCContext";
 import Index from "./pages/Index";
+import Market from "./pages/Market";
 import Trade from "./pages/Trade";
 import Loan from "./pages/Loan";
 import Auth from "./pages/Auth";
@@ -32,6 +33,7 @@ const App = () => (
                   <BrowserRouter>
                     <Routes>
                     <Route path="/" element={<Index />} />
+                    <Route path="/market" element={<Market />} />
                     <Route path="/trade/:symbol" element={<Trade />} />
                     <Route path="/loan" element={<Loan />} />
                     <Route path="/auth" element={<Auth />} />
