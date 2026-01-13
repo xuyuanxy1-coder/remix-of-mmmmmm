@@ -1,5 +1,17 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { useAssets } from './AssetsContext';
+
+export interface RepaymentRecord {
+  id: string;
+  loanId: string;
+  amount: number;
+  receiptImage: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: Date;
+  reviewedAt?: Date;
+  appliedToInterest: number;
+  appliedToPenalty: number;
+  appliedToPrincipal: number;
+}
 
 export interface Loan {
   id: string;
@@ -9,16 +21,21 @@ export interface Loan {
   repaidDate?: Date;
   status: 'active' | 'overdue' | 'paid';
   guarantorId?: string;
-  interestPaid?: number;
-  penaltyPaid?: number;
+  interestPaid: number;
+  penaltyPaid: number;
+  principalPaid: number;
+  repayments: RepaymentRecord[];
 }
 
 interface LoanContextType {
   loans: Loan[];
   applyLoan: (amount: number, currency: string, guarantorId?: string) => boolean;
-  repayLoan: (loanId: string) => boolean;
-  calculateOwed: (loan: Loan) => { principal: number; interest: number; penalty: number; total: number; daysElapsed: number };
+  submitRepayment: (loanId: string, amount: number, receiptImage: string) => boolean;
+  approveRepayment: (loanId: string, repaymentId: string) => boolean;
+  rejectRepayment: (loanId: string, repaymentId: string) => boolean;
+  calculateOwed: (loan: Loan) => { principal: number; interest: number; penalty: number; total: number; daysElapsed: number; remainingPrincipal: number; remainingInterest: number; remainingPenalty: number; remainingTotal: number };
   loanHistory: Loan[];
+  pendingRepayments: RepaymentRecord[];
 }
 
 export const MIN_LOAN_AMOUNT = 5000;
@@ -28,7 +45,6 @@ const LoanContext = createContext<LoanContextType | undefined>(undefined);
 
 export const LoanProvider = ({ children }: { children: ReactNode }) => {
   const [loans, setLoans] = useState<Loan[]>([]);
-  const { updateBalance, getBalance } = useAssets();
 
   const calculateOwed = (loan: Loan) => {
     const now = new Date();
@@ -49,12 +65,22 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
     }
     // 7天内免息
 
+    // Calculate remaining amounts after approved repayments
+    const remainingPenalty = Math.max(0, penalty - loan.penaltyPaid);
+    const remainingInterest = Math.max(0, interest - loan.interestPaid);
+    const remainingPrincipal = Math.max(0, principal - loan.principalPaid);
+    const remainingTotal = remainingPrincipal + remainingInterest + remainingPenalty;
+
     return {
       principal,
       interest,
       penalty,
       total: principal + interest + penalty,
-      daysElapsed
+      daysElapsed,
+      remainingPrincipal,
+      remainingInterest,
+      remainingPenalty,
+      remainingTotal
     };
   };
 
@@ -67,42 +93,151 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
       currency,
       borrowDate: new Date(),
       status: 'active',
-      guarantorId: guarantorId || undefined
+      guarantorId: guarantorId || undefined,
+      interestPaid: 0,
+      penaltyPaid: 0,
+      principalPaid: 0,
+      repayments: []
     };
 
     setLoans(prev => [...prev, newLoan]);
-    updateBalance(currency, amount);
+    // Note: Balance is NOT updated here - loan amount should be added by admin after approval
     return true;
   };
 
-  const repayLoan = (loanId: string): boolean => {
+  const submitRepayment = (loanId: string, amount: number, receiptImage: string): boolean => {
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan || loan.status === 'paid') return false;
+
+    const repayment: RepaymentRecord = {
+      id: `rep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      loanId,
+      amount,
+      receiptImage,
+      status: 'pending',
+      submittedAt: new Date(),
+      appliedToInterest: 0,
+      appliedToPenalty: 0,
+      appliedToPrincipal: 0
+    };
+
+    setLoans(prev => prev.map(l => 
+      l.id === loanId 
+        ? { ...l, repayments: [...l.repayments, repayment] }
+        : l
+    ));
+
+    return true;
+  };
+
+  const approveRepayment = (loanId: string, repaymentId: string): boolean => {
     const loan = loans.find(l => l.id === loanId);
     if (!loan) return false;
 
-    const { total, interest, penalty } = calculateOwed(loan);
-    const balance = getBalance(loan.currency);
+    const repayment = loan.repayments.find(r => r.id === repaymentId);
+    if (!repayment || repayment.status !== 'pending') return false;
 
-    if (balance < total) return false;
+    // Calculate current owed amounts
+    const owed = calculateOwed(loan);
+    let remainingPayment = repayment.amount;
 
-    updateBalance(loan.currency, -total);
+    // Priority: Penalty → Interest → Principal
+    let appliedToPenalty = 0;
+    let appliedToInterest = 0;
+    let appliedToPrincipal = 0;
+
+    // 1. Apply to penalty first
+    if (remainingPayment > 0 && owed.remainingPenalty > 0) {
+      appliedToPenalty = Math.min(remainingPayment, owed.remainingPenalty);
+      remainingPayment -= appliedToPenalty;
+    }
+
+    // 2. Apply to interest
+    if (remainingPayment > 0 && owed.remainingInterest > 0) {
+      appliedToInterest = Math.min(remainingPayment, owed.remainingInterest);
+      remainingPayment -= appliedToInterest;
+    }
+
+    // 3. Apply to principal
+    if (remainingPayment > 0 && owed.remainingPrincipal > 0) {
+      appliedToPrincipal = Math.min(remainingPayment, owed.remainingPrincipal);
+      remainingPayment -= appliedToPrincipal;
+    }
+
+    setLoans(prev => prev.map(l => {
+      if (l.id !== loanId) return l;
+
+      const newPenaltyPaid = l.penaltyPaid + appliedToPenalty;
+      const newInterestPaid = l.interestPaid + appliedToInterest;
+      const newPrincipalPaid = l.principalPaid + appliedToPrincipal;
+
+      // Check if fully paid
+      const updatedOwed = calculateOwed({
+        ...l,
+        penaltyPaid: newPenaltyPaid,
+        interestPaid: newInterestPaid,
+        principalPaid: newPrincipalPaid
+      });
+
+      const isFullyPaid = updatedOwed.remainingTotal <= 0;
+
+      return {
+        ...l,
+        penaltyPaid: newPenaltyPaid,
+        interestPaid: newInterestPaid,
+        principalPaid: newPrincipalPaid,
+        status: isFullyPaid ? 'paid' as const : l.status,
+        repaidDate: isFullyPaid ? new Date() : l.repaidDate,
+        repayments: l.repayments.map(r => 
+          r.id === repaymentId 
+            ? {
+                ...r,
+                status: 'approved' as const,
+                reviewedAt: new Date(),
+                appliedToPenalty,
+                appliedToInterest,
+                appliedToPrincipal
+              }
+            : r
+        )
+      };
+    }));
+
+    return true;
+  };
+
+  const rejectRepayment = (loanId: string, repaymentId: string): boolean => {
     setLoans(prev => prev.map(l => 
       l.id === loanId 
-        ? { 
-            ...l, 
-            status: 'paid' as const, 
-            repaidDate: new Date(),
-            interestPaid: interest,
-            penaltyPaid: penalty
-          } 
+        ? {
+            ...l,
+            repayments: l.repayments.map(r => 
+              r.id === repaymentId 
+                ? { ...r, status: 'rejected' as const, reviewedAt: new Date() }
+                : r
+            )
+          }
         : l
     ));
     return true;
   };
 
   const loanHistory = loans.filter(l => l.status === 'paid');
+  const pendingRepayments = loans.flatMap(l => 
+    l.repayments.filter(r => r.status === 'pending')
+  );
 
   return (
-    <LoanContext.Provider value={{ loans, applyLoan, repayLoan, calculateOwed, loanHistory }}>
+    <LoanContext.Provider value={{ 
+      loans, 
+      applyLoan, 
+      submitRepayment, 
+      approveRepayment,
+      rejectRepayment,
+      calculateOwed, 
+      loanHistory,
+      pendingRepayments
+    }}>
       {children}
     </LoanContext.Provider>
   );
