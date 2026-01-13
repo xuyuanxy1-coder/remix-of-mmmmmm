@@ -50,12 +50,12 @@ const LoanApplication = () => {
 
     const success = applyLoan(loanAmount, currency, hasGuarantor ? guarantorId.trim() : undefined);
     if (success) {
-      toast.success(`Successfully borrowed ${loanAmount.toLocaleString()} ${currency}`);
+      toast.success(`Loan application submitted for ${loanAmount.toLocaleString()} ${currency}. Waiting for approval.`);
       setAmount('');
       setGuarantorId('');
       setHasGuarantor(false);
     } else {
-      toast.error('Failed to process loan');
+      toast.error('Failed to process loan application');
     }
   };
 
