@@ -97,6 +97,16 @@ const Navbar = () => {
                   </a>
                 )
               ))}
+              <button 
+                onClick={() => {
+                  openChat();
+                  setMobileMenuOpen(false);
+                }}
+                className="nav-link py-2 flex items-center gap-2 text-primary"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Customer Service
+              </button>
               <div className="flex gap-3 pt-4 border-t border-border">
                 <Link to="/auth" className="flex-1">
                   <Button variant="outline" className="btn-outline w-full">
