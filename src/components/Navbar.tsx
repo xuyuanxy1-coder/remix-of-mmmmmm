@@ -21,9 +21,9 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">S</span>
+              <span className="text-primary-foreground font-bold text-sm">M</span>
             </div>
-            <span className="font-display font-semibold text-lg">ShieldDEX</span>
+            <span className="font-display font-semibold text-lg">MetaMask Trade</span>
           </div>
 
           {/* Desktop Navigation */}

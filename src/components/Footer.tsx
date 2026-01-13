@@ -20,9 +20,9 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
-                <span className="text-foreground font-bold text-sm">S</span>
+                <span className="text-foreground font-bold text-sm">M</span>
               </div>
-              <span className="font-display font-semibold text-lg">ShieldDEX</span>
+              <span className="font-display font-semibold text-lg">MetaMask Trade</span>
             </div>
             <p className="text-background/60 text-sm leading-relaxed mb-6">
               The world's leading cryptocurrency exchange platform. 
@@ -65,7 +65,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-background/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-background/40 text-sm">
-            © 2024 ShieldDEX. All rights reserved.
+            © 2024 MetaMask Trade. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-background/60 hover:text-background transition-colors">
