@@ -194,14 +194,14 @@ const Account = () => {
           <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Account Total Assets</p>
           <h1 className="text-4xl lg:text-5xl font-display font-bold">
             {totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            <span className="text-xl text-muted-foreground ml-2">USD</span>
+            <span className="text-xl text-muted-foreground ml-2">USDT</span>
           </h1>
           <div className={`inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full text-sm ${
             floatingPnL >= 0 ? 'bg-[hsl(145,60%,45%)]/20 text-[hsl(145,60%,45%)]' : 'bg-[hsl(0,70%,55%)]/20 text-[hsl(0,70%,55%)]'
           }`}>
             <span>Floating P&L:</span>
             <span className="font-medium">
-              {floatingPnL >= 0 ? '+' : ''}{floatingPnL.toFixed(2)} USD ({floatingPnLPercent >= 0 ? '+' : ''}{floatingPnLPercent}%)
+              {floatingPnL >= 0 ? '+' : ''}{floatingPnL.toFixed(2)} USDT ({floatingPnLPercent >= 0 ? '+' : ''}{floatingPnLPercent}%)
             </span>
           </div>
         </div>
@@ -210,11 +210,11 @@ const Account = () => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-muted/50 rounded-xl p-4 border border-border">
             <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Balance</p>
-            <p className="text-2xl font-semibold">{getBalance('USDT').toLocaleString()} USD</p>
+            <p className="text-2xl font-semibold">{getBalance('USDT').toLocaleString()} USDT</p>
           </div>
           <div className="bg-muted/50 rounded-xl p-4 border border-border">
             <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Loan</p>
-            <p className="text-2xl font-semibold">0.00 USD</p>
+            <p className="text-2xl font-semibold">0.00 USDT</p>
           </div>
         </div>
 
@@ -278,7 +278,7 @@ const Account = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-medium">{balance.toFixed(4)}</p>
-                  <p className="text-sm text-muted-foreground">≈ {usdValue.toFixed(2)} USD</p>
+                  <p className="text-sm text-muted-foreground">≈ {usdValue.toFixed(2)} USDT</p>
                 </div>
               </div>
             );
@@ -423,7 +423,7 @@ const Account = () => {
               {showRate && (
                 <div className="text-center p-3 bg-muted/50 rounded-lg border border-border">
                   <span className="text-primary font-medium">
-                    1 ETH: {ethPrice ? ethPrice.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---'} USD
+                    1 ETH: {ethPrice ? ethPrice.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---'} USDT
                   </span>
                 </div>
               )}
@@ -528,75 +528,143 @@ const Account = () => {
     </div>
   );
 
-  const renderExchange = () => (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-card border border-border rounded-2xl p-6">
-        <h3 className="font-semibold mb-6">Exchange Crypto</h3>
-        
-        <div className="space-y-6">
-          {/* From */}
-          <div>
-            <label className="text-sm text-muted-foreground mb-2 block">From:</label>
-            <div className="flex gap-3">
-              <Select defaultValue="usdt">
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="usdt">USDT</SelectItem>
-                  <SelectItem value="btc">BTC</SelectItem>
-                  <SelectItem value="eth">ETH</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input type="number" placeholder="Amount" className="flex-1" />
-            </div>
-          </div>
+  const renderExchange = () => {
+    const [fromCurrency, setFromCurrency] = useState('usdt');
+    const [toCurrency, setToCurrency] = useState('btc');
+    const [fromAmount, setFromAmount] = useState('');
+    
+    const exchangeCurrencies = [
+      { value: 'usdt', label: 'USDT' },
+      { value: 'btc', label: 'BTC' },
+      { value: 'eth', label: 'ETH' },
+      { value: 'bnb', label: 'BNB' },
+      { value: 'sol', label: 'SOL' },
+      { value: 'xrp', label: 'XRP' },
+      { value: 'ada', label: 'ADA' },
+      { value: 'doge', label: 'DOGE' },
+      { value: 'dot', label: 'DOT' },
+      { value: 'ltc', label: 'LTC' },
+    ];
 
-          {/* Swap Icon */}
-          <div className="flex justify-center">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <ArrowLeftRight className="w-5 h-5 text-muted-foreground" />
-            </div>
-          </div>
+    // Get prices for calculation
+    const fromPrice = fromCurrency === 'usdt' ? 1 : (getPrice(fromCurrency.toUpperCase())?.price || 0);
+    const toPrice = toCurrency === 'usdt' ? 1 : (getPrice(toCurrency.toUpperCase())?.price || 0);
+    
+    const exchangeRate = toPrice > 0 ? fromPrice / toPrice : 0;
+    const toAmount = fromAmount && exchangeRate > 0 ? (parseFloat(fromAmount) * exchangeRate * 0.999).toFixed(8) : '';
 
-          {/* To */}
-          <div>
-            <label className="text-sm text-muted-foreground mb-2 block">To:</label>
-            <div className="flex gap-3">
-              <Select defaultValue="btc">
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="usdt">USDT</SelectItem>
-                  <SelectItem value="btc">BTC</SelectItem>
-                  <SelectItem value="eth">ETH</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input type="number" placeholder="You receive" className="flex-1" disabled />
-            </div>
-          </div>
+    const handleSwapCurrencies = () => {
+      const temp = fromCurrency;
+      setFromCurrency(toCurrency);
+      setToCurrency(temp);
+      setFromAmount('');
+    };
 
-          {/* Exchange Rate */}
-          <div className="p-4 bg-muted/50 rounded-lg border border-border">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Exchange Rate</span>
-              <span>1 USDT = 0.0000108 BTC</span>
-            </div>
-            <div className="flex justify-between text-sm mt-2">
-              <span className="text-muted-foreground">Fee</span>
-              <span>0.1%</span>
-            </div>
-          </div>
+    const handleExchange = () => {
+      if (!fromAmount || parseFloat(fromAmount) <= 0) {
+        toast.error('Please enter a valid amount');
+        return;
+      }
+      const fromBalance = getBalance(fromCurrency.toUpperCase());
+      if (parseFloat(fromAmount) > fromBalance) {
+        toast.error('Insufficient balance');
+        return;
+      }
+      toast.success(`Exchange request submitted: ${fromAmount} ${fromCurrency.toUpperCase()} → ${toAmount} ${toCurrency.toUpperCase()}`);
+      setFromAmount('');
+    };
 
-          <Button className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg font-medium">
-            Exchange Now
-            <ChevronRight className="w-5 h-5 ml-2" />
-          </Button>
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <h3 className="font-semibold mb-6">Exchange Crypto</h3>
+          
+          <div className="space-y-6">
+            {/* From */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">From:</label>
+              <div className="flex gap-3">
+                <Select value={fromCurrency} onValueChange={setFromCurrency}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {exchangeCurrencies.filter(c => c.value !== toCurrency).map(currency => (
+                      <SelectItem key={currency.value} value={currency.value}>{currency.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input 
+                  type="number" 
+                  placeholder="Amount" 
+                  className="flex-1" 
+                  value={fromAmount}
+                  onChange={(e) => setFromAmount(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Balance: {getBalance(fromCurrency.toUpperCase()).toFixed(4)} {fromCurrency.toUpperCase()}
+              </p>
+            </div>
+
+            {/* Swap Icon */}
+            <div className="flex justify-center">
+              <button 
+                onClick={handleSwapCurrencies}
+                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+              >
+                <ArrowLeftRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* To */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">To:</label>
+              <div className="flex gap-3">
+                <Select value={toCurrency} onValueChange={setToCurrency}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {exchangeCurrencies.filter(c => c.value !== fromCurrency).map(currency => (
+                      <SelectItem key={currency.value} value={currency.value}>{currency.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input 
+                  type="number" 
+                  placeholder="You receive" 
+                  className="flex-1" 
+                  value={toAmount}
+                  disabled 
+                />
+              </div>
+            </div>
+
+            {/* Exchange Rate */}
+            <div className="p-4 bg-muted/50 rounded-lg border border-border">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Exchange Rate</span>
+                <span>1 {fromCurrency.toUpperCase()} = {exchangeRate.toFixed(8)} {toCurrency.toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between text-sm mt-2">
+                <span className="text-muted-foreground">Fee</span>
+                <span>0.1%</span>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleExchange}
+              className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg font-medium"
+            >
+              Exchange Now
+              <ChevronRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
