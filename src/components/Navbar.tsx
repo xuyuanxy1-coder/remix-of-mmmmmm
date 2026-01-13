@@ -48,12 +48,16 @@ const Navbar = () => {
               Customer Service
               <ChevronDown className="w-4 h-4" />
             </button>
-            <Button variant="outline" className="btn-outline border-foreground/20">
-              Login
-            </Button>
-            <Button className="btn-primary">
-              Sign up
-            </Button>
+            <Link to="/auth">
+              <Button variant="outline" className="btn-outline border-foreground/20">
+                Login
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button className="btn-primary">
+                Sign up
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -89,12 +93,16 @@ const Navbar = () => {
                 )
               ))}
               <div className="flex gap-3 pt-4 border-t border-border">
-                <Button variant="outline" className="btn-outline flex-1">
-                  Login
-                </Button>
-                <Button className="btn-primary flex-1">
-                  Sign up
-                </Button>
+                <Link to="/auth" className="flex-1">
+                  <Button variant="outline" className="btn-outline w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth" className="flex-1">
+                  <Button className="btn-primary w-full">
+                    Sign up
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
