@@ -111,7 +111,6 @@ const LoanRepayment = () => {
             <p>Repayment must be made via external wallet transfer. Account balance cannot be used for loan repayment.</p>
             <p className="text-xs opacity-80">• Partial repayment is allowed</p>
             <p className="text-xs opacity-80">• Repayment priority: Penalty → Interest → Principal</p>
-            <p className="text-xs opacity-80">• Amount owed will be reduced after admin approval</p>
           </div>
         </div>
       </div>
