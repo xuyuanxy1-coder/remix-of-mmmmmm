@@ -401,23 +401,6 @@ const Account = () => {
                 </div>
               )}
 
-              {/* Contact Notice */}
-              <div className="text-center p-4 bg-muted/30 rounded-lg border border-border">
-                <p className="text-muted-foreground">Please contact customer service to recharge.</p>
-              </div>
-
-              {/* Copy Address Button */}
-              <div className="flex justify-center">
-                <Button 
-                  onClick={handleCopyAddress}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copied ? 'Copied!' : 'Copy Address'}
-                </Button>
-              </div>
-
               {/* QR Code Placeholder */}
               <div className="flex justify-center">
                 <div className="w-48 h-48 bg-white p-4 rounded-lg border border-border">
@@ -426,10 +409,21 @@ const Account = () => {
               </div>
 
               {/* Wallet Address */}
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground break-all font-mono bg-muted/50 p-3 rounded-lg">
-                  {walletAddress}
-                </p>
+              <div className="text-center space-y-3">
+                <p className="text-sm text-muted-foreground">Deposit Address</p>
+                <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                  <p className="text-sm break-all font-mono">
+                    {walletAddress}
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleCopyAddress}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? 'Copied!' : 'Copy Address'}
+                </Button>
               </div>
             </TabsContent>
             );
