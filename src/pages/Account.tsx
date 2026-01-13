@@ -47,10 +47,10 @@ const CRYPTO_ASSETS = [
   { symbol: 'XRP', name: 'XRP', icon: '💧', color: 'bg-gray-500' },
 ];
 
-const NETWORKS = [
-  { id: 'erc20', name: 'ERC-USDT', rate: '1.00' },
+const RECHARGE_NETWORKS = [
+  { id: 'erc20', name: 'ERC20-USDT', rate: '1.00' },
+  { id: 'trc20', name: 'TRC20-USDT', rate: '1.00' },
   { id: 'eth', name: 'ETH', rate: '1.00' },
-  { id: 'trc20', name: 'TRC-USDT', rate: '1.00' },
 ];
 
 const MIN_DEPOSITS: Record<string, number> = {
@@ -253,9 +253,8 @@ const Account = () => {
                 <SelectValue placeholder="Select network" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="usdt">USDT</SelectItem>
-                <SelectItem value="btc">BTC</SelectItem>
-                <SelectItem value="eth">ETH</SelectItem>
+                <SelectItem value="erc20">ERC20</SelectItem>
+                <SelectItem value="trc20">TRC20</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -341,7 +340,7 @@ const Account = () => {
       <div className="bg-card border border-border rounded-2xl p-6">
         <Tabs value={selectedRechargeNetwork} onValueChange={setSelectedRechargeNetwork}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
-            {NETWORKS.map((network) => (
+            {RECHARGE_NETWORKS.map((network) => (
               <TabsTrigger 
                 key={network.id} 
                 value={network.id}
@@ -352,7 +351,7 @@ const Account = () => {
             ))}
           </TabsList>
 
-          {NETWORKS.map((network) => (
+          {RECHARGE_NETWORKS.map((network) => (
             <TabsContent key={network.id} value={network.id} className="space-y-6">
               {/* Rate Display */}
               <div className="text-center p-3 bg-muted/50 rounded-lg border border-border">
