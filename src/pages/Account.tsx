@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import { 
   ArrowUpRight, 
   ArrowDownLeft, 
@@ -47,10 +48,17 @@ const CRYPTO_ASSETS = [
   { symbol: 'XRP', name: 'XRP', icon: '💧', color: 'bg-gray-500' },
 ];
 
+// Network addresses - ERC20 and ETH share the same address
+const WALLET_ADDRESSES: Record<string, string> = {
+  erc20: '0x8B3a7E2c9F1d4A5b6C8e9D0F1A2B3c4D5E6f7890',
+  trc20: 'TXkd8Jq9vM3Kn5Wp2YhL4Nz7Rf6Bc8Ds2E',
+  eth: '0x8B3a7E2c9F1d4A5b6C8e9D0F1A2B3c4D5E6f7890', // Same as ERC20
+};
+
 const RECHARGE_NETWORKS = [
-  { id: 'erc20', name: 'ERC20-USDT', rate: '1.00' },
-  { id: 'trc20', name: 'TRC20-USDT', rate: '1.00' },
-  { id: 'eth', name: 'ETH', rate: '1.00' },
+  { id: 'erc20', name: 'ERC20-USDT' },
+  { id: 'trc20', name: 'TRC20-USDT' },
+  { id: 'eth', name: 'ETH' },
 ];
 
 const MIN_DEPOSITS: Record<string, number> = {
@@ -86,10 +94,11 @@ const Account = () => {
   const floatingPnL = -381.58;
   const floatingPnLPercent = -1.42;
 
-  const walletAddress = 'TXkd8Jq9vM3Kn5Wp2YhL4Nz7Rf6Bc8Ds2E';
+  // Get current wallet address based on selected network
+  const currentWalletAddress = WALLET_ADDRESSES[selectedRechargeNetwork] || WALLET_ADDRESSES.erc20;
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(walletAddress);
+    navigator.clipboard.writeText(currentWalletAddress);
     setCopied(true);
     toast.success('Address copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
@@ -401,10 +410,15 @@ const Account = () => {
                 </div>
               )}
 
-              {/* QR Code Placeholder */}
+              {/* QR Code */}
               <div className="flex justify-center">
-                <div className="w-48 h-48 bg-white p-4 rounded-lg border border-border">
-                  <div className="w-full h-full bg-[repeating-conic-gradient(#000_0_90deg,#fff_90deg_180deg)_0_0/25%_25%] rounded"></div>
+                <div className="bg-white p-4 rounded-lg border border-border">
+                  <QRCodeSVG 
+                    value={WALLET_ADDRESSES[network.id]} 
+                    size={160}
+                    level="H"
+                    includeMargin={true}
+                  />
                 </div>
               </div>
 
@@ -413,7 +427,7 @@ const Account = () => {
                 <p className="text-sm text-muted-foreground">Deposit Address</p>
                 <div className="bg-muted/50 p-4 rounded-lg border border-border">
                   <p className="text-sm break-all font-mono">
-                    {walletAddress}
+                    {WALLET_ADDRESSES[network.id]}
                   </p>
                 </div>
                 <Button 
