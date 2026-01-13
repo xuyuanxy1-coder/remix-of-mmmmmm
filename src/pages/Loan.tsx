@@ -25,7 +25,7 @@ const Loan = () => {
           {/* Loan Terms Info */}
           <div className="bg-card border border-border rounded-xl p-4 mb-6">
             <h3 className="font-semibold mb-3">📋 Loan Terms</h3>
-            <div className="grid md:grid-cols-4 gap-4 text-sm">
+            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
               <div className="flex items-start gap-2">
                 <span className="text-blue-500">💰</span>
                 <div>
@@ -52,6 +52,13 @@ const Loan = () => {
                 <div>
                   <p className="font-medium">After Day 15</p>
                   <p className="text-muted-foreground">2% daily penalty</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-orange-500">🔒</span>
+                <div>
+                  <p className="font-medium">Withdrawal Lock</p>
+                  <p className="text-muted-foreground">Cannot withdraw with active loan</p>
                 </div>
               </div>
             </div>
