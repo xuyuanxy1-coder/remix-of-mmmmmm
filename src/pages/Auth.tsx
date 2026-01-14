@@ -37,9 +37,32 @@ const Auth = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
+  // Check if running on mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  // Check if MetaMask is available
+  const hasMetaMask = typeof window !== 'undefined' && window.ethereum?.isMetaMask;
+
+  // Generate MetaMask deep link for mobile
+  const getMetaMaskDeepLink = () => {
+    const currentUrl = window.location.href;
+    // MetaMask mobile app deep link format
+    return `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+  };
+
   const handleWalletConnect = async () => {
+    // On mobile without MetaMask browser extension
+    if (isMobile && !window.ethereum) {
+      // Redirect to MetaMask mobile app via deep link
+      const deepLink = getMetaMaskDeepLink();
+      window.location.href = deepLink;
+      return;
+    }
+
     if (!window.ethereum) {
       toast.error('Please install MetaMask wallet first');
+      // Provide download link
+      window.open('https://metamask.io/download/', '_blank');
       return;
     }
 
@@ -297,10 +320,17 @@ const Auth = () => {
                 ) : (
                   <>
                     <Wallet className="w-5 h-5" />
-                    <span>Connect Wallet</span>
+                    <span>{isMobile && !hasMetaMask ? 'Open in MetaMask' : 'Connect Wallet'}</span>
                   </>
                 )}
               </Button>
+              
+              {/* Mobile hint */}
+              {isMobile && !hasMetaMask && (
+                <p className="text-xs text-muted-foreground text-center -mt-4 mb-4">
+                  Tap to open MetaMask app or download it
+                </p>
+              )}
 
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
