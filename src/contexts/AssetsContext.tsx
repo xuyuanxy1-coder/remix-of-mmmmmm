@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { api, WalletAsset, WalletResponse } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Asset {
   symbol: string;
@@ -10,7 +11,7 @@ export interface Asset {
 
 interface AssetsContextType {
   assets: Asset[];
-  updateBalance: (symbol: string, amount: number) => void;
+  updateBalance: (symbol: string, amount: number) => Promise<boolean>;
   getBalance: (symbol: string) => number;
   refreshAssets: () => Promise<void>;
   isLoading: boolean;
@@ -22,6 +23,9 @@ const defaultAssets: Asset[] = [
   { symbol: 'ETH', name: 'Ethereum', balance: 0, icon: '⟠' },
   { symbol: 'BNB', name: 'BNB', balance: 0, icon: '🟡' },
   { symbol: 'SOL', name: 'Solana', balance: 0, icon: '☀️' },
+  { symbol: 'XRP', name: 'XRP', balance: 0, icon: '💧' },
+  { symbol: 'ADA', name: 'Cardano', balance: 0, icon: '🔵' },
+  { symbol: 'DOGE', name: 'Dogecoin', balance: 0, icon: '🐕' },
 ];
 
 const AssetsContext = createContext<AssetsContextType | undefined>(undefined);
@@ -29,54 +33,92 @@ const AssetsContext = createContext<AssetsContextType | undefined>(undefined);
 export const AssetsProvider = ({ children }: { children: ReactNode }) => {
   const [assets, setAssets] = useState<Asset[]>(defaultAssets);
   const [isLoading, setIsLoading] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   const refreshAssets = useCallback(async () => {
-    // Only fetch if user is authenticated
-    if (!api.isAuthenticated()) {
+    if (!isAuthenticated || !user) {
+      setAssets(defaultAssets);
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await api.get<WalletResponse>('/wallet');
-      
-      if (response.assets && response.assets.length > 0) {
-        setAssets(response.assets.map(a => ({
-          symbol: a.symbol,
-          name: a.name,
-          balance: a.balance,
-          icon: a.icon || getDefaultIcon(a.symbol),
+      const { data, error } = await supabase
+        .from('assets')
+        .select('currency, balance')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Failed to fetch assets:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Merge with default assets to ensure all currencies are shown
+        const assetMap = new Map(data.map(a => [a.currency, Number(a.balance)]));
+        
+        setAssets(defaultAssets.map(asset => ({
+          ...asset,
+          balance: assetMap.get(asset.symbol) ?? 0,
         })));
+      } else {
+        setAssets(defaultAssets);
       }
     } catch (error) {
-      console.error('Failed to fetch wallet assets:', error);
-      // Keep current assets on error
+      console.error('Failed to fetch assets:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, user]);
 
-  // Fetch assets on mount and when token changes
+  // Fetch assets when authentication changes
   useEffect(() => {
     refreshAssets();
-    
-    // Listen for storage changes (token updates)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'token') {
-        refreshAssets();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, [refreshAssets]);
 
-  const updateBalance = (symbol: string, amount: number) => {
-    setAssets(prev => prev.map(asset => 
-      asset.symbol === symbol 
-        ? { ...asset, balance: Math.max(0, asset.balance + amount) }
-        : asset
-    ));
+  const updateBalance = async (symbol: string, amount: number): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // Get current balance
+      const { data: current } = await supabase
+        .from('assets')
+        .select('balance')
+        .eq('user_id', user.id)
+        .eq('currency', symbol)
+        .maybeSingle();
+
+      const currentBalance = current ? Number(current.balance) : 0;
+      const newBalance = Math.max(0, currentBalance + amount);
+
+      // Upsert the balance
+      const { error } = await supabase
+        .from('assets')
+        .upsert({
+          user_id: user.id,
+          currency: symbol,
+          balance: newBalance,
+        }, {
+          onConflict: 'user_id,currency',
+        });
+
+      if (error) {
+        console.error('Failed to update balance:', error);
+        return false;
+      }
+
+      // Update local state
+      setAssets(prev => prev.map(asset => 
+        asset.symbol === symbol 
+          ? { ...asset, balance: newBalance }
+          : asset
+      ));
+
+      return true;
+    } catch (error) {
+      console.error('Failed to update balance:', error);
+      return false;
+    }
   };
 
   const getBalance = (symbol: string) => {
@@ -89,21 +131,6 @@ export const AssetsProvider = ({ children }: { children: ReactNode }) => {
     </AssetsContext.Provider>
   );
 };
-
-// Helper to get default icon for a symbol
-function getDefaultIcon(symbol: string): string {
-  const icons: Record<string, string> = {
-    USDT: '💵',
-    BTC: '₿',
-    ETH: '⟠',
-    BNB: '🟡',
-    SOL: '☀️',
-    XRP: '💧',
-    ADA: '🔵',
-    DOGE: '🐕',
-  };
-  return icons[symbol] || '🪙';
-}
 
 export const useAssets = () => {
   const context = useContext(AssetsContext);

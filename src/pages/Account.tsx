@@ -106,8 +106,8 @@ const Account = () => {
   const { loans } = useLoan();
   const { kycData, submitKYC, isVerified } = useKYC();
 
-  // Check if user has active loans
-  const hasActiveLoan = loans.some(loan => loan.status === 'active');
+  // Check if user has active loans (approved or overdue status)
+  const hasActiveLoan = loans.some(loan => loan.status === 'approved' || loan.status === 'overdue');
   const totalAssets = CRYPTO_ASSETS.reduce((total, crypto) => {
     const balance = getBalance(crypto.symbol);
     const priceData = getPrice(crypto.symbol);

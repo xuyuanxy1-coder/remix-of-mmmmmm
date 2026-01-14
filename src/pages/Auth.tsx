@@ -1,46 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import MetaMaskLogo from '@/components/MetaMaskLogo';
 import { toast } from 'sonner';
-import { Wallet, Send, Shield, Sparkles, TrendingUp, Lock } from 'lucide-react';
-import { api, WalletConnectResponse } from '@/lib/api';
+import { Sparkles, TrendingUp, Lock, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 type AuthMode = 'login' | 'register';
 
 const Auth = () => {
   const [mode, setMode] = useState<AuthMode>('login');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, register, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       toast.error('Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await api.post<{ token: string }>('/auth/login', {
-        username: username.trim(),
-        password: password.trim(),
-      }, false);
+      const { error } = await login(email.trim(), password.trim());
       
-      api.setToken(response.token);
-      toast.success('Login successful!');
-      navigate('/');
-    } catch (error: any) {
-      toast.error(error.message || 'Login failed');
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success('Login successful!');
+        navigate('/');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -56,81 +58,33 @@ const Auth = () => {
       toast.error('Passwords do not match');
       return;
     }
-    if (!verificationCode.trim()) {
-      toast.error('Please enter verification code');
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
     setIsLoading(true);
     try {
-      await api.post('/auth/register', {
-        email: email.trim(),
-        username: username.trim(),
-        password: password.trim(),
-        verificationCode: verificationCode.trim(),
-      }, false);
+      const { error } = await register(email.trim(), password.trim(), username.trim());
       
-      toast.success('Registration successful! Please login.');
-      setMode('login');
-    } catch (error: any) {
-      toast.error(error.message || 'Registration failed');
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success('Registration successful! You are now logged in.');
+        navigate('/');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSendCode = async () => {
-    if (!email.trim()) {
-      toast.error('Please enter your email first');
-      return;
-    }
-
-    try {
-      await api.post('/auth/send-code', { email: email.trim() }, false);
-      toast.success('Verification code sent to your email');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to send verification code');
-    }
-  };
-
-  const handleConnectWallet = async (network: string) => {
-    setIsConnecting(true);
-    
-    try {
-      // Check if MetaMask or similar wallet is available
-      const ethereum = (window as any).ethereum;
-      if (!ethereum) {
-        toast.error('Please install MetaMask or another Web3 wallet');
-        setIsConnecting(false);
-        return;
-      }
-
-      // Request wallet connection
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      const walletAddress = accounts[0];
-
-      if (!walletAddress) {
-        toast.error('No wallet address found');
-        setIsConnecting(false);
-        return;
-      }
-
-      // Call backend API to authenticate with wallet
-      const response = await api.post<WalletConnectResponse>('/auth/wallet-connect', {
-        walletAddress,
-        network,
-      }, false);
-
-      api.setToken(response.token);
-      setIsWalletModalOpen(false);
-      toast.success(`Successfully connected to ${network}!`);
-      navigate('/');
-    } catch (error: any) {
-      toast.error(error.message || `Failed to connect to ${network}. Please try again.`);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -232,13 +186,13 @@ const Auth = () => {
               {mode === 'login' ? (
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Username</label>
+                    <label className="text-sm font-medium text-foreground">Email</label>
                     <Input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
-                      placeholder="Enter your username"
+                      placeholder="Enter your email"
                       disabled={isLoading}
                     />
                   </div>
@@ -261,24 +215,6 @@ const Auth = () => {
                     className="w-full h-12 text-base font-semibold gold-gradient text-primary-foreground rounded-xl hover:opacity-90 transition-opacity"
                   >
                     {isLoading ? 'Logging in...' : 'Login'}
-                  </Button>
-
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border/50"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">or continue with</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    onClick={() => setIsWalletModalOpen(true)}
-                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-xl"
-                  >
-                    <Wallet className="w-5 h-5 mr-2" />
-                    Connect Wallet
                   </Button>
 
                   <div className="text-center pt-4">
@@ -327,7 +263,7 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20"
-                      placeholder="Create a password"
+                      placeholder="Create a password (min 6 chars)"
                       disabled={isLoading}
                     />
                   </div>
@@ -342,29 +278,6 @@ const Auth = () => {
                       placeholder="Confirm your password"
                       disabled={isLoading}
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Verification Code</label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="text"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        className="h-12 bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20 flex-1"
-                        placeholder="Enter code"
-                        disabled={isLoading}
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleSendCode}
-                        variant="outline"
-                        className="h-12 px-4 rounded-xl border-primary text-primary hover:bg-primary/10"
-                        disabled={isLoading}
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
                   </div>
 
                   <Button
@@ -393,41 +306,6 @@ const Auth = () => {
           </div>
         </div>
       </main>
-
-      {/* Connect Wallet Modal */}
-      <Dialog open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl">Select Network</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 pt-4">
-            {[
-              { name: 'Ethereum Network', desc: 'Connect Ethereum network wallet', icon: '⟠', color: 'from-blue-500/20 to-purple-500/20' },
-              { name: 'BSC Network', desc: 'Connect BNB Smart Chain wallet', icon: '🟡', color: 'from-yellow-500/20 to-orange-500/20' },
-              { name: 'Polygon Network', desc: 'Connect Polygon network wallet', icon: '🟣', color: 'from-purple-500/20 to-pink-500/20' },
-            ].map((network) => (
-              <button
-                key={network.name}
-                onClick={() => handleConnectWallet(network.name)}
-                disabled={isConnecting}
-                className={`w-full p-4 bg-gradient-to-r ${network.color} border border-border rounded-xl hover:border-primary/50 transition-all text-left disabled:opacity-50 group`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-card rounded-full flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition-transform">
-                    {network.icon}
-                  </div>
-                  <div>
-                    <p className="font-semibold">{network.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {isConnecting ? 'Connecting...' : network.desc}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

@@ -11,49 +11,35 @@ import AdminTransactions from '@/components/admin/AdminTransactions';
 import AdminSettings from '@/components/admin/AdminSettings';
 
 const Admin = () => {
-  const { user, isAdmin, logout, checkAuth } = useAuth();
+  const { user, isAdmin, isLoading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
 
   useEffect(() => {
-    const verifyAdmin = async () => {
-      const isAuthed = await checkAuth();
-      
-      if (!isAuthed) {
-        toast.error('Please login first');
-        navigate('/auth');
-        return;
-      }
+    // Wait for auth to finish loading
+    if (authLoading) return;
+    
+    // Check if user is authenticated and is admin
+    if (!user) {
+      toast.error('Please login first');
+      navigate('/auth');
+      return;
+    }
 
-      // Check stored user role
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.role !== 'admin') {
-          toast.error('Access denied. Admin only.');
-          navigate('/auth');
-          return;
-        }
-      } else if (!isAdmin) {
-        toast.error('Access denied. Admin only.');
-        navigate('/auth');
-        return;
-      }
+    if (!isAdmin) {
+      toast.error('Access denied. Admin only.');
+      navigate('/');
+      return;
+    }
+  }, [user, isAdmin, authLoading, navigate]);
 
-      setIsLoading(false);
-    };
-
-    verifyAdmin();
-  }, [navigate, isAdmin, checkAuth]);
-
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/auth');
     toast.success('Logged out successfully');
   };
 
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -62,6 +48,10 @@ const Admin = () => {
         </div>
       </div>
     );
+  }
+
+  if (!isAdmin) {
+    return null;
   }
 
   return (

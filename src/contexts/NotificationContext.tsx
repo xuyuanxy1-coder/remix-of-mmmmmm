@@ -29,16 +29,17 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const checkLoanReminders = useCallback(() => {
     const now = new Date();
-    const activeLoans = loans.filter(l => l.status === 'active');
+    // Active loans are those with 'approved' or 'overdue' status
+    const activeLoans = loans.filter(l => l.status === 'approved' || l.status === 'overdue');
     
     activeLoans.forEach(loan => {
       const borrowDate = new Date(loan.borrowDate);
       const daysElapsed = Math.floor((now.getTime() - borrowDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      // 免息期7天，所以到期日是借款后第7天
+      // Interest-free period is 7 days
       const daysUntilDue = 7 - daysElapsed;
       
-      // 到期前3天提醒 (第4-5天)
+      // Reminder 3 days before due (days 4-5)
       const threeDayKey = `${loan.id}_3day`;
       if (daysUntilDue <= 3 && daysUntilDue > 1 && !checkedLoans.has(threeDayKey)) {
         const notification: Notification = {
@@ -54,7 +55,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         setCheckedLoans(prev => new Set(prev).add(threeDayKey));
       }
       
-      // 到期前1天提醒 (第6天)
+      // Reminder 1 day before due (day 6)
       const oneDayKey = `${loan.id}_1day`;
       if (daysUntilDue === 1 && !checkedLoans.has(oneDayKey)) {
         const notification: Notification = {
@@ -70,7 +71,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         setCheckedLoans(prev => new Set(prev).add(oneDayKey));
       }
       
-      // 已逾期提醒
+      // Overdue reminder
       const overdueKey = `${loan.id}_overdue`;
       if (daysUntilDue < 0 && !checkedLoans.has(overdueKey)) {
         const notification: Notification = {
@@ -90,7 +91,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     checkLoanReminders();
-    // 每小时检查一次
+    // Check every hour
     const interval = setInterval(checkLoanReminders, 60 * 60 * 1000);
     return () => clearInterval(interval);
   }, [checkLoanReminders]);

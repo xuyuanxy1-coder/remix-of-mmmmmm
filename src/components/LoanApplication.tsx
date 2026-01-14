@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Coins, Clock, Info, Shield, AlertTriangle } from 'lucide-react';
+import { Coins, Clock, Info, AlertTriangle } from 'lucide-react';
 
 const currencies = [
   { symbol: 'USDT', name: 'Tether' },
@@ -16,15 +16,15 @@ const currencies = [
 const LoanApplication = () => {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USDT');
-  const [guarantorId, setGuarantorId] = useState('');
-  const [hasGuarantor, setHasGuarantor] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { applyLoan, loans } = useLoan();
-  const { kycData, isVerified } = useKYC();
+  const { kycData } = useKYC();
 
-  const activeLoans = loans.filter(l => l.status === 'active');
+  // Count active loans (approved or overdue status)
+  const activeLoans = loans.filter(l => l.status === 'approved' || l.status === 'overdue');
   const kycNotCompleted = kycData.status !== 'approved';
 
-  const handleApply = () => {
+  const handleApply = async () => {
     const loanAmount = parseFloat(amount);
     
     if (!loanAmount || loanAmount <= 0) {
@@ -42,24 +42,22 @@ const LoanApplication = () => {
       return;
     }
 
-    if (hasGuarantor && !guarantorId.trim()) {
-      toast.error('Please enter guarantor ID');
-      return;
-    }
-
     if (activeLoans.length >= 3) {
       toast.error('Maximum 3 active loans allowed');
       return;
     }
 
-    const success = applyLoan(loanAmount, currency, hasGuarantor ? guarantorId.trim() : undefined);
-    if (success) {
-      toast.success(`Loan application submitted for ${loanAmount.toLocaleString()} ${currency}. Waiting for approval.`);
-      setAmount('');
-      setGuarantorId('');
-      setHasGuarantor(false);
-    } else {
-      toast.error('Failed to process loan application');
+    setIsSubmitting(true);
+    try {
+      const success = await applyLoan(loanAmount, currency);
+      if (success) {
+        toast.success(`Loan application submitted for ${loanAmount.toLocaleString()} ${currency}. Waiting for approval.`);
+        setAmount('');
+      } else {
+        toast.error('Failed to process loan application');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -148,38 +146,6 @@ const LoanApplication = () => {
           ))}
         </div>
 
-        {/* Guarantor Section */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <input 
-              type="checkbox" 
-              id="hasGuarantor"
-              checked={hasGuarantor}
-              onChange={(e) => setHasGuarantor(e.target.checked)}
-              className="rounded border-border"
-            />
-            <Label htmlFor="hasGuarantor" className="cursor-pointer flex items-center gap-2">
-              <Shield className="w-4 h-4 text-green-500" />
-              Secured Loan (with Guarantor)
-            </Label>
-          </div>
-          
-          {hasGuarantor && (
-            <div className="space-y-2 pl-6">
-              <Label>Guarantor ID</Label>
-              <Input
-                type="text"
-                placeholder="Enter guarantor's wallet ID"
-                value={guarantorId}
-                onChange={(e) => setGuarantorId(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                The guarantor will be responsible if you fail to repay
-              </p>
-            </div>
-          )}
-        </div>
-
         {/* Loan Info */}
         <div className="bg-muted/50 rounded-lg p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm">
@@ -210,9 +176,9 @@ const LoanApplication = () => {
           className="w-full btn-primary" 
           size="lg"
           onClick={handleApply}
-          disabled={activeLoans.length >= 3 || kycNotCompleted}
+          disabled={activeLoans.length >= 3 || kycNotCompleted || isSubmitting}
         >
-          {hasGuarantor ? 'Apply for Secured Loan' : 'Apply for Loan'}
+          {isSubmitting ? 'Submitting...' : 'Apply for Loan'}
         </Button>
       </div>
     </div>
