@@ -31,7 +31,7 @@ const AdminSettings = () => {
         });
         setAddresses(addressMap);
       } catch (error: any) {
-        toast.error(error.message || 'Failed to load config');
+        toast.error(error.message || '加载配置失败');
       } finally {
         setIsLoading(false);
       }
@@ -43,16 +43,16 @@ const AdminSettings = () => {
   const handleSaveAddress = async (network: string) => {
     const address = addresses[network];
     if (!address) {
-      toast.error('Please enter an address');
+      toast.error('请输入钱包地址');
       return;
     }
 
     setIsSaving(network);
     try {
       await adminApi.updateRechargeAddress(network, address);
-      toast.success(`${network} address updated successfully`);
+      toast.success(`${network} 地址更新成功`);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update address');
+      toast.error(error.message || '更新地址失败');
     } finally {
       setIsSaving(null);
     }
@@ -64,7 +64,7 @@ const AdminSettings = () => {
         <CardContent className="py-8">
           <div className="flex items-center justify-center gap-2">
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            Loading settings...
+            加载设置中...
           </div>
         </CardContent>
       </Card>
@@ -77,7 +77,7 @@ const AdminSettings = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="w-5 h-5" />
-            Recharge Wallet Addresses
+            充值钱包地址
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -89,7 +89,7 @@ const AdminSettings = () => {
               </div>
               <div className="flex gap-2">
                 <Input
-                  placeholder={`Enter ${network.name} wallet address`}
+                  placeholder={`请输入 ${network.name} 钱包地址`}
                   value={addresses[network.id] || ''}
                   onChange={(e) => setAddresses({ ...addresses, [network.id]: e.target.value })}
                   className="font-mono text-sm"
@@ -104,7 +104,7 @@ const AdminSettings = () => {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-1" />
-                      Save
+                      保存
                     </>
                   )}
                 </Button>
@@ -112,7 +112,7 @@ const AdminSettings = () => {
             </div>
           ))}
           <p className="text-xs text-muted-foreground mt-4">
-            These addresses will be displayed to users when they want to recharge their accounts.
+            这些地址将显示给用户进行充值操作。
           </p>
         </CardContent>
       </Card>

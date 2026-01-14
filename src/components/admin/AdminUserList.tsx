@@ -63,7 +63,7 @@ const AdminUserList = () => {
       setUsers(response.users);
       setTotalPages(response.totalPages);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch users');
+      toast.error(error.message || '获取用户列表失败');
     } finally {
       setIsLoading(false);
     }
@@ -99,13 +99,13 @@ const AdminUserList = () => {
         amount: parseFloat(balanceAmount),
         reason: balanceReason,
       });
-      toast.success('Balance updated successfully');
+      toast.success('余额修改成功');
       setBalanceModal({ open: false, user: null });
       setBalanceAmount('');
       setBalanceReason('');
       fetchUsers();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update balance');
+      toast.error(error.message || '余额修改失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,11 +117,11 @@ const AdminUserList = () => {
     setIsSubmitting(true);
     try {
       await adminApi.updateUserPassword(passwordModal.user.id, newPassword);
-      toast.success('Password updated successfully');
+      toast.success('密码修改成功');
       setPasswordModal({ open: false, user: null });
       setNewPassword('');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update password');
+      toast.error(error.message || '密码修改失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -134,11 +134,11 @@ const AdminUserList = () => {
     try {
       const newStatus = freezeConfirm.user.status === 'active' ? 'frozen' : 'active';
       await adminApi.updateUserStatus(freezeConfirm.user.id, newStatus);
-      toast.success(`User ${newStatus === 'frozen' ? 'frozen' : 'unfrozen'} successfully`);
+      toast.success(`账户${newStatus === 'frozen' ? '冻结' : '解冻'}成功`);
       setFreezeConfirm({ open: false, user: null });
       fetchUsers();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update user status');
+      toast.error(error.message || '操作失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -149,7 +149,7 @@ const AdminUserList = () => {
       const trades = await adminApi.getUserPendingTrades(user.id);
       setTradesModal({ open: true, user, trades });
     } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch pending trades');
+      toast.error(error.message || '获取待处理交易失败');
     }
   };
 
@@ -157,14 +157,14 @@ const AdminUserList = () => {
     setIsSubmitting(true);
     try {
       await adminApi.setTradeOutcome(tradeId, outcome);
-      toast.success(`Trade set to ${outcome}`);
+      toast.success(`交易已设置为${outcome === 'win' ? '盈利' : '亏损'}`);
       // Refresh trades
       if (tradesModal.user) {
         const trades = await adminApi.getUserPendingTrades(tradesModal.user.id);
         setTradesModal({ ...tradesModal, trades });
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to set trade outcome');
+      toast.error(error.message || '设置交易结果失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,31 +173,31 @@ const AdminUserList = () => {
   const getKycBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-500/20 text-green-500">Verified</Badge>;
+        return <Badge className="bg-green-500/20 text-green-500">已认证</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-500/20 text-yellow-500">Pending</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-500">待审核</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-500/20 text-red-500">Rejected</Badge>;
+        return <Badge className="bg-red-500/20 text-red-500">已拒绝</Badge>;
       default:
-        return <Badge variant="outline">None</Badge>;
+        return <Badge variant="outline">未提交</Badge>;
     }
   };
 
   const getStatusBadge = (status: string) => {
     return status === 'active' 
-      ? <Badge className="bg-green-500/20 text-green-500">Active</Badge>
-      : <Badge className="bg-red-500/20 text-red-500">Frozen</Badge>;
+      ? <Badge className="bg-green-500/20 text-green-500">正常</Badge>
+      : <Badge className="bg-red-500/20 text-red-500">已冻结</Badge>;
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>User Management</span>
+          <span>用户管理</span>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search users..."
+              placeholder="搜索用户..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -212,22 +212,22 @@ const AdminUserList = () => {
               <TableRow>
                 <TableHead className="cursor-pointer" onClick={() => handleSort('username')}>
                   <div className="flex items-center gap-1">
-                    Username
+                    用户名
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </TableHead>
-                <TableHead>Wallet</TableHead>
+                <TableHead>钱包地址</TableHead>
                 <TableHead className="cursor-pointer" onClick={() => handleSort('balance')}>
                   <div className="flex items-center gap-1">
-                    Balance
+                    余额
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </TableHead>
-                <TableHead>Loan</TableHead>
-                <TableHead>Win/Loss</TableHead>
-                <TableHead>KYC</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>贷款</TableHead>
+                <TableHead>盈/亏</TableHead>
+                <TableHead>实名认证</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -236,14 +236,14 @@ const AdminUserList = () => {
                   <TableCell colSpan={8} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      Loading...
+                      加载中...
                     </div>
                   </TableCell>
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No users found
+                    暂无用户
                   </TableCell>
                 </TableRow>
               ) : (
@@ -271,31 +271,31 @@ const AdminUserList = () => {
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-popover border border-border">
                           <DropdownMenuItem onClick={() => setBalanceModal({ open: true, user })}>
                             <DollarSign className="w-4 h-4 mr-2" />
-                            Modify Balance
+                            修改余额
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setFreezeConfirm({ open: true, user })}>
                             {user.status === 'active' ? (
                               <>
                                 <Lock className="w-4 h-4 mr-2" />
-                                Freeze Account
+                                冻结账户
                               </>
                             ) : (
                               <>
                                 <Unlock className="w-4 h-4 mr-2" />
-                                Unfreeze Account
+                                解冻账户
                               </>
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setPasswordModal({ open: true, user })}>
                             <Key className="w-4 h-4 mr-2" />
-                            Change Password
+                            修改密码
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openTradesModal(user)}>
                             <Gamepad2 className="w-4 h-4 mr-2" />
-                            Control Trades
+                            控制交易
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -319,7 +319,7 @@ const AdminUserList = () => {
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
+              第 {page} 页 / 共 {totalPages} 页
             </span>
             <Button
               variant="outline"
@@ -337,25 +337,25 @@ const AdminUserList = () => {
       <Dialog open={balanceModal.open} onOpenChange={(open) => !open && setBalanceModal({ open: false, user: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modify Balance - {balanceModal.user?.username}</DialogTitle>
+            <DialogTitle>修改余额 - {balanceModal.user?.username}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Amount (USDT)</label>
+              <label className="text-sm font-medium">金额 (USDT)</label>
               <Input
                 type="number"
-                placeholder="e.g., 100 for deposit, -50 for deduction"
+                placeholder="例如: 100 为充值, -50 为扣除"
                 value={balanceAmount}
                 onChange={(e) => setBalanceAmount(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Positive = deposit, Negative = deduction
+                正数 = 充值，负数 = 扣除
               </p>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Reason</label>
+              <label className="text-sm font-medium">原因</label>
               <Textarea
-                placeholder="Enter reason for balance change"
+                placeholder="请输入修改余额的原因"
                 value={balanceReason}
                 onChange={(e) => setBalanceReason(e.target.value)}
               />
@@ -363,10 +363,10 @@ const AdminUserList = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBalanceModal({ open: false, user: null })}>
-              Cancel
+              取消
             </Button>
             <Button onClick={handleBalanceSubmit} disabled={isSubmitting || !balanceAmount}>
-              {isSubmitting ? 'Updating...' : 'Update Balance'}
+              {isSubmitting ? '处理中...' : '确认修改'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -376,14 +376,14 @@ const AdminUserList = () => {
       <Dialog open={passwordModal.open} onOpenChange={(open) => !open && setPasswordModal({ open: false, user: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Password - {passwordModal.user?.username}</DialogTitle>
+            <DialogTitle>修改密码 - {passwordModal.user?.username}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">New Password</label>
+              <label className="text-sm font-medium">新密码</label>
               <Input
                 type="password"
-                placeholder="Enter new password"
+                placeholder="请输入新密码"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
@@ -391,10 +391,10 @@ const AdminUserList = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPasswordModal({ open: false, user: null })}>
-              Cancel
+              取消
             </Button>
             <Button onClick={handlePasswordSubmit} disabled={isSubmitting || !newPassword}>
-              {isSubmitting ? 'Updating...' : 'Update Password'}
+              {isSubmitting ? '处理中...' : '确认修改'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -405,27 +405,27 @@ const AdminUserList = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {freezeConfirm.user?.status === 'active' ? 'Freeze' : 'Unfreeze'} Account
+              {freezeConfirm.user?.status === 'active' ? '冻结' : '解冻'}账户
             </DialogTitle>
           </DialogHeader>
           <p className="py-4">
-            Are you sure you want to {freezeConfirm.user?.status === 'active' ? 'freeze' : 'unfreeze'} the account for <strong>{freezeConfirm.user?.username}</strong>?
+            确定要{freezeConfirm.user?.status === 'active' ? '冻结' : '解冻'} <strong>{freezeConfirm.user?.username}</strong> 的账户吗？
             {freezeConfirm.user?.status === 'active' && (
               <span className="block text-sm text-muted-foreground mt-2">
-                Frozen accounts cannot trade or withdraw.
+                冻结后该账户将无法进行交易和提现操作。
               </span>
             )}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFreezeConfirm({ open: false, user: null })}>
-              Cancel
+              取消
             </Button>
             <Button 
               variant={freezeConfirm.user?.status === 'active' ? 'destructive' : 'default'}
               onClick={handleFreezeToggle} 
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Processing...' : (freezeConfirm.user?.status === 'active' ? 'Freeze' : 'Unfreeze')}
+              {isSubmitting ? '处理中...' : (freezeConfirm.user?.status === 'active' ? '确认冻结' : '确认解冻')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -435,21 +435,21 @@ const AdminUserList = () => {
       <Dialog open={tradesModal.open} onOpenChange={(open) => !open && setTradesModal({ open: false, user: null, trades: [] })}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Pending Trades - {tradesModal.user?.username}</DialogTitle>
+            <DialogTitle>待处理交易 - {tradesModal.user?.username}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             {tradesModal.trades.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No pending trades</p>
+              <p className="text-center text-muted-foreground py-8">暂无待处理交易</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Pair</TableHead>
-                    <TableHead>Side</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Profit Rate</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead>交易对</TableHead>
+                    <TableHead>方向</TableHead>
+                    <TableHead>金额</TableHead>
+                    <TableHead>时长</TableHead>
+                    <TableHead>盈利率</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -458,11 +458,11 @@ const AdminUserList = () => {
                       <TableCell>{trade.pair}</TableCell>
                       <TableCell>
                         <Badge className={trade.side === 'long' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}>
-                          {trade.side.toUpperCase()}
+                          {trade.side === 'long' ? '做多' : '做空'}
                         </Badge>
                       </TableCell>
                       <TableCell>{trade.amount} USDT</TableCell>
-                      <TableCell>{trade.duration}s</TableCell>
+                      <TableCell>{trade.duration}秒</TableCell>
                       <TableCell>{(trade.profitRate * 100).toFixed(0)}%</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
@@ -472,7 +472,7 @@ const AdminUserList = () => {
                             onClick={() => handleTradeOutcome(trade.id, 'win')}
                             disabled={isSubmitting}
                           >
-                            Win
+                            盈利
                           </Button>
                           <Button
                             size="sm"
@@ -480,7 +480,7 @@ const AdminUserList = () => {
                             onClick={() => handleTradeOutcome(trade.id, 'loss')}
                             disabled={isSubmitting}
                           >
-                            Loss
+                            亏损
                           </Button>
                         </div>
                       </TableCell>

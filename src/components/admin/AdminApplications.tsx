@@ -47,7 +47,7 @@ const AdminApplications = () => {
       const data = await adminApi.getApplications(type);
       setApplications(data.filter(app => app.status === 'pending'));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch applications');
+      toast.error(error.message || '获取申请列表失败');
     } finally {
       setIsLoading(false);
     }
@@ -77,10 +77,10 @@ const AdminApplications = () => {
     setIsSubmitting(true);
     try {
       await adminApi.approveApplication(id);
-      toast.success('Application approved');
+      toast.success('申请已通过');
       fetchApplications();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to approve application');
+      toast.error(error.message || '审批失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -96,13 +96,13 @@ const AdminApplications = () => {
       } else {
         await adminApi.batchRejectApplications(rejectModal.ids, rejectReason);
       }
-      toast.success(`${rejectModal.ids.length} application(s) rejected`);
+      toast.success(`已拒绝 ${rejectModal.ids.length} 个申请`);
       setRejectModal({ open: false, ids: [] });
       setRejectReason('');
       setSelectedIds([]);
       fetchApplications();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to reject applications');
+      toast.error(error.message || '拒绝失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -114,45 +114,46 @@ const AdminApplications = () => {
     setIsSubmitting(true);
     try {
       await adminApi.batchApproveApplications(selectedIds);
-      toast.success(`${selectedIds.length} applications approved`);
+      toast.success(`已通过 ${selectedIds.length} 个申请`);
       setSelectedIds([]);
       fetchApplications();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to approve applications');
+      toast.error(error.message || '批量审批失败');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const getTypeBadge = (type: string) => {
-    const colors: Record<string, string> = {
-      loan: 'bg-blue-500/20 text-blue-500',
-      repayment: 'bg-green-500/20 text-green-500',
-      verify: 'bg-purple-500/20 text-purple-500',
-      recharge: 'bg-yellow-500/20 text-yellow-500',
-      withdraw: 'bg-orange-500/20 text-orange-500',
+    const config: Record<string, { color: string; label: string }> = {
+      loan: { color: 'bg-blue-500/20 text-blue-500', label: '贷款' },
+      repayment: { color: 'bg-green-500/20 text-green-500', label: '还款' },
+      verify: { color: 'bg-purple-500/20 text-purple-500', label: '实名认证' },
+      recharge: { color: 'bg-yellow-500/20 text-yellow-500', label: '充值' },
+      withdraw: { color: 'bg-orange-500/20 text-orange-500', label: '提现' },
     };
-    return <Badge className={colors[type] || 'bg-muted'}>{type.toUpperCase()}</Badge>;
+    const item = config[type] || { color: 'bg-muted', label: type };
+    return <Badge className={item.color}>{item.label}</Badge>;
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between flex-wrap gap-4">
-          <span>Application Review</span>
+          <span>申请审核</span>
           <div className="flex items-center gap-3">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-40">
                 <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Filter type" />
+                <SelectValue placeholder="筛选类型" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="loan">Loan</SelectItem>
-                <SelectItem value="repayment">Repayment</SelectItem>
-                <SelectItem value="verify">Verify</SelectItem>
-                <SelectItem value="recharge">Recharge</SelectItem>
-                <SelectItem value="withdraw">Withdraw</SelectItem>
+              <SelectContent className="bg-popover border border-border">
+                <SelectItem value="all">全部类型</SelectItem>
+                <SelectItem value="loan">贷款</SelectItem>
+                <SelectItem value="repayment">还款</SelectItem>
+                <SelectItem value="verify">实名认证</SelectItem>
+                <SelectItem value="recharge">充值</SelectItem>
+                <SelectItem value="withdraw">提现</SelectItem>
               </SelectContent>
             </Select>
             {selectedIds.length > 0 && (
@@ -164,7 +165,7 @@ const AdminApplications = () => {
                   disabled={isSubmitting}
                 >
                   <Check className="w-4 h-4 mr-1" />
-                  Approve ({selectedIds.length})
+                  通过 ({selectedIds.length})
                 </Button>
                 <Button
                   size="sm"
@@ -173,7 +174,7 @@ const AdminApplications = () => {
                   disabled={isSubmitting}
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Reject ({selectedIds.length})
+                  拒绝 ({selectedIds.length})
                 </Button>
               </div>
             )}
@@ -191,12 +192,12 @@ const AdminApplications = () => {
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>用户</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>金额</TableHead>
+                <TableHead>日期</TableHead>
+                <TableHead>详情</TableHead>
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -205,14 +206,14 @@ const AdminApplications = () => {
                   <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      Loading...
+                      加载中...
                     </div>
                   </TableCell>
                 </TableRow>
               ) : applications.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No pending applications
+                    暂无待处理申请
                   </TableCell>
                 </TableRow>
               ) : (
@@ -230,7 +231,7 @@ const AdminApplications = () => {
                       {app.amount ? `${app.amount.toLocaleString()} USDT` : '-'}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(app.createdAt), 'MMM dd, yyyy HH:mm')}
+                      {format(new Date(app.createdAt), 'yyyy-MM-dd HH:mm')}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
                       {app.details ? JSON.stringify(app.details) : '-'}
@@ -267,16 +268,16 @@ const AdminApplications = () => {
       <Dialog open={rejectModal.open} onOpenChange={(open) => !open && setRejectModal({ open: false, ids: [] })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Application{rejectModal.ids.length > 1 ? 's' : ''}</DialogTitle>
+            <DialogTitle>拒绝申请</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              You are about to reject {rejectModal.ids.length} application{rejectModal.ids.length > 1 ? 's' : ''}.
+              您即将拒绝 {rejectModal.ids.length} 个申请。
             </p>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Reason (optional)</label>
+              <label className="text-sm font-medium">拒绝原因（可选）</label>
               <Textarea
-                placeholder="Enter rejection reason"
+                placeholder="请输入拒绝原因"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
               />
@@ -284,10 +285,10 @@ const AdminApplications = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectModal({ open: false, ids: [] })}>
-              Cancel
+              取消
             </Button>
             <Button variant="destructive" onClick={handleReject} disabled={isSubmitting}>
-              {isSubmitting ? 'Rejecting...' : 'Reject'}
+              {isSubmitting ? '处理中...' : '确认拒绝'}
             </Button>
           </DialogFooter>
         </DialogContent>
