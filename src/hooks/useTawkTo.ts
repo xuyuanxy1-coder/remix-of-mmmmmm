@@ -56,33 +56,28 @@ export const useTawkTo = () => {
 
   const openChat = useCallback(() => {
     if (window.Tawk_API) {
-      if (window.Tawk_API.showWidget) {
-        window.Tawk_API.showWidget();
-      }
-      if (window.Tawk_API.maximize) {
-        window.Tawk_API.maximize();
-      }
+      window.Tawk_API.showWidget?.();
+      window.Tawk_API.maximize?.();
     }
   }, []);
 
   const closeChat = useCallback(() => {
     if (window.Tawk_API) {
-      if (window.Tawk_API.minimize) {
-        window.Tawk_API.minimize();
-      }
-      if (window.Tawk_API.hideWidget) {
-        window.Tawk_API.hideWidget();
-      }
+      window.Tawk_API.minimize?.();
+      // Small delay before hiding to let minimize animation complete
+      setTimeout(() => {
+        window.Tawk_API?.hideWidget?.();
+      }, 300);
     }
   }, []);
 
   const toggleChat = useCallback(() => {
-    if (window.Tawk_API?.toggle) {
-      window.Tawk_API.toggle();
-    } else {
-      openChat();
+    if (window.Tawk_API) {
+      // Check if widget is currently visible/maximized
+      // Tawk doesn't expose a direct isOpen state, so we use toggle
+      window.Tawk_API.toggle?.();
     }
-  }, [openChat]);
+  }, []);
 
   return { openChat, closeChat, toggleChat };
 };

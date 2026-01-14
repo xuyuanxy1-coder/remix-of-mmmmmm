@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Menu, X, MessageCircle, Shield } from 'lucide-react';
+import { Menu, X, MessageCircle, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -18,7 +18,7 @@ const navItems = [
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { openChat } = useTawkTo();
+  const { toggleChat } = useTawkTo();
   const { isAdmin, isAuthenticated } = useAuth();
 
   return (
@@ -51,7 +51,7 @@ const Navbar = () => {
             <NotificationBell />
             <ThemeToggle />
             <button 
-              onClick={openChat}
+              onClick={toggleChat}
               className="nav-link flex items-center gap-1 hover:text-primary transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
@@ -120,7 +120,7 @@ const Navbar = () => {
               ))}
               <button 
                 onClick={() => {
-                  openChat();
+                  toggleChat();
                   setMobileMenuOpen(false);
                 }}
                 className="nav-link py-2 flex items-center gap-2 text-primary"

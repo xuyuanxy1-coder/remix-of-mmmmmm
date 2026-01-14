@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   ArrowUpRight, 
@@ -19,7 +19,8 @@ import {
   FileText,
   CheckCircle2,
   XCircle,
-  Loader2
+  Loader2,
+  LogOut
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
@@ -29,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAssets } from '@/contexts/AssetsContext';
 import { useCryptoPrices } from '@/hooks/useCryptoPrices';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
   Select,
@@ -105,6 +107,14 @@ const Account = () => {
   const { getPrice } = useCryptoPrices();
   const { loans } = useLoan();
   const { kycData, submitKYC, isVerified } = useKYC();
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success('Logged out successfully');
+    navigate('/');
+  };
 
   // Check if user has active loans (approved or overdue status)
   const hasActiveLoan = loans.some(loan => loan.status === 'approved' || loan.status === 'overdue');
@@ -337,6 +347,18 @@ const Account = () => {
               </div>
             )}
           </button>
+        </div>
+
+        {/* Logout Button */}
+        <div className="mt-6 pt-6 border-t border-border">
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+          >
+            <LogOut className="w-4 h-4" />
+            Log Out
+          </Button>
         </div>
       </div>
 
