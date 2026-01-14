@@ -50,19 +50,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .eq('user_id', userId)
         .maybeSingle();
 
-      // Fetch role
-      const { data: roleData } = await supabase
+      // Fetch roles (a user may have multiple roles)
+      const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
+
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+      }
+
+      const roles = (rolesData ?? []).map((r) => r.role);
+      const isAdmin = roles.includes('admin');
 
       const appUser: AppUser = {
         id: userId,
         username: profile?.username || email?.split('@')[0] || 'User',
         email: email || '',
         walletAddress: profile?.wallet_address || undefined,
-        role: (roleData?.role as 'user' | 'admin') || 'user',
+        role: isAdmin ? 'admin' : 'user',
       };
 
       setUser(appUser);
