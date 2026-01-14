@@ -257,8 +257,8 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
         note: `Smart Trade: ${direction.toUpperCase()} ${symbol} @ $${currentPrice.toLocaleString()} for ${selectedTime.label}`,
       });
 
-      // Update local state
-      updateBalance('USDT', -totalCost);
+      // Refresh assets to sync with database (don't call updateBalance as it will double-deduct)
+      await refreshAssets();
 
       const trade: ActiveTrade = {
         id: Date.now().toString(),
