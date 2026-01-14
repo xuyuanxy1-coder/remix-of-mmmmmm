@@ -28,26 +28,151 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Check, X, Filter } from 'lucide-react';
-import { adminApi, Application } from '@/lib/adminApi';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+
+type ApplicationType = 'deposit' | 'withdraw' | 'loan' | 'kyc';
+
+interface Application {
+  id: string;
+  user_id: string;
+  username: string | null;
+  type: ApplicationType;
+  amount?: number;
+  currency?: string;
+  status: string;
+  created_at: string;
+  details?: string;
+  table_name: string;
+}
 
 const AdminApplications = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [rejectModal, setRejectModal] = useState<{ open: boolean; ids: string[] }>({ open: false, ids: [] });
+  const [rejectModal, setRejectModal] = useState<{ open: boolean; app: Application | null }>({ open: false, app: null });
   const [rejectReason, setRejectReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchApplications = async () => {
     setIsLoading(true);
     try {
-      const type = typeFilter === 'all' ? undefined : typeFilter;
-      const data = await adminApi.getApplications(type);
-      setApplications(data.filter(app => app.status === 'pending'));
+      const allApplications: Application[] = [];
+
+      // Fetch pending transactions (deposits and withdrawals)
+      if (typeFilter === 'all' || typeFilter === 'deposit' || typeFilter === 'withdraw') {
+        let txQuery = supabase
+          .from('transactions')
+          .select('*')
+          .eq('status', 'pending');
+        
+        if (typeFilter === 'deposit') {
+          txQuery = txQuery.eq('type', 'deposit');
+        } else if (typeFilter === 'withdraw') {
+          txQuery = txQuery.eq('type', 'withdraw');
+        } else {
+          txQuery = txQuery.in('type', ['deposit', 'withdraw']);
+        }
+
+        const { data: txs } = await txQuery.order('created_at', { ascending: false });
+
+        if (txs) {
+          const userIds = [...new Set(txs.map(t => t.user_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, username, email')
+            .in('user_id', userIds);
+
+          txs.forEach(tx => {
+            const profile = profiles?.find(p => p.user_id === tx.user_id);
+            allApplications.push({
+              id: tx.id,
+              user_id: tx.user_id,
+              username: profile?.username || profile?.email || tx.user_id.slice(0, 8),
+              type: tx.type as ApplicationType,
+              amount: tx.amount,
+              currency: tx.currency,
+              status: tx.status,
+              created_at: tx.created_at,
+              details: tx.note || undefined,
+              table_name: 'transactions',
+            });
+          });
+        }
+      }
+
+      // Fetch pending loans
+      if (typeFilter === 'all' || typeFilter === 'loan') {
+        const { data: loans } = await supabase
+          .from('loans')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (loans) {
+          const userIds = [...new Set(loans.map(l => l.user_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, username, email')
+            .in('user_id', userIds);
+
+          loans.forEach(loan => {
+            const profile = profiles?.find(p => p.user_id === loan.user_id);
+            allApplications.push({
+              id: loan.id,
+              user_id: loan.user_id,
+              username: profile?.username || profile?.email || loan.user_id.slice(0, 8),
+              type: 'loan',
+              amount: loan.amount,
+              currency: loan.currency,
+              status: loan.status,
+              created_at: loan.created_at,
+              details: `期限: ${loan.term_days}天, 利率: ${loan.interest_rate}%`,
+              table_name: 'loans',
+            });
+          });
+        }
+      }
+
+      // Fetch pending KYC
+      if (typeFilter === 'all' || typeFilter === 'kyc') {
+        const { data: kycRecords } = await supabase
+          .from('kyc_records')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (kycRecords) {
+          const userIds = [...new Set(kycRecords.map(k => k.user_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, username, email')
+            .in('user_id', userIds);
+
+          kycRecords.forEach(kyc => {
+            const profile = profiles?.find(p => p.user_id === kyc.user_id);
+            allApplications.push({
+              id: kyc.id,
+              user_id: kyc.user_id,
+              username: profile?.username || profile?.email || kyc.user_id.slice(0, 8),
+              type: 'kyc',
+              status: kyc.status,
+              created_at: kyc.created_at,
+              details: `姓名: ${kyc.real_name}, 证件: ${kyc.id_type}`,
+              table_name: 'kyc_records',
+            });
+          });
+        }
+      }
+
+      // Sort by created_at
+      allApplications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setApplications(allApplications);
     } catch (error: any) {
-      toast.error(error.message || '获取申请列表失败');
+      console.error('Error fetching applications:', error);
+      toast.error('获取申请列表失败');
     } finally {
       setIsLoading(false);
     }
@@ -73,52 +198,112 @@ const AdminApplications = () => {
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (app: Application) => {
     setIsSubmitting(true);
     try {
-      await adminApi.approveApplication(id);
+      if (app.table_name === 'transactions') {
+        // For deposits, also update user balance
+        if (app.type === 'deposit') {
+          const { data: asset } = await supabase
+            .from('assets')
+            .select('balance')
+            .eq('user_id', app.user_id)
+            .eq('currency', app.currency || 'USDT')
+            .single();
+
+          const newBalance = (asset?.balance || 0) + (app.amount || 0);
+          
+          await supabase
+            .from('assets')
+            .update({ balance: newBalance })
+            .eq('user_id', app.user_id)
+            .eq('currency', app.currency || 'USDT');
+        }
+
+        await supabase
+          .from('transactions')
+          .update({ status: 'completed' })
+          .eq('id', app.id);
+      } else if (app.table_name === 'loans') {
+        // Approve loan and add to user balance
+        const { data: asset } = await supabase
+          .from('assets')
+          .select('balance')
+          .eq('user_id', app.user_id)
+          .eq('currency', app.currency || 'USDT')
+          .single();
+
+        const newBalance = (asset?.balance || 0) + (app.amount || 0);
+        
+        await supabase
+          .from('assets')
+          .update({ balance: newBalance })
+          .eq('user_id', app.user_id)
+          .eq('currency', app.currency || 'USDT');
+
+        await supabase
+          .from('loans')
+          .update({ 
+            status: 'approved',
+            approved_at: new Date().toISOString(),
+            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          })
+          .eq('id', app.id);
+      } else if (app.table_name === 'kyc_records') {
+        await supabase
+          .from('kyc_records')
+          .update({ 
+            status: 'approved',
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('id', app.id);
+      }
+
       toast.success('申请已通过');
       fetchApplications();
     } catch (error: any) {
-      toast.error(error.message || '审批失败');
+      console.error('Error approving:', error);
+      toast.error('审批失败');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleReject = async () => {
-    if (rejectModal.ids.length === 0) return;
+    if (!rejectModal.app) return;
     
     setIsSubmitting(true);
     try {
-      if (rejectModal.ids.length === 1) {
-        await adminApi.rejectApplication(rejectModal.ids[0], rejectReason);
-      } else {
-        await adminApi.batchRejectApplications(rejectModal.ids, rejectReason);
+      const app = rejectModal.app;
+      
+      if (app.table_name === 'transactions') {
+        await supabase
+          .from('transactions')
+          .update({ status: 'cancelled', note: rejectReason || app.details })
+          .eq('id', app.id);
+      } else if (app.table_name === 'loans') {
+        await supabase
+          .from('loans')
+          .update({ status: 'rejected' })
+          .eq('id', app.id);
+      } else if (app.table_name === 'kyc_records') {
+        await supabase
+          .from('kyc_records')
+          .update({ 
+            status: 'rejected',
+            reject_reason: rejectReason,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('id', app.id);
       }
-      toast.success(`已拒绝 ${rejectModal.ids.length} 个申请`);
-      setRejectModal({ open: false, ids: [] });
-      setRejectReason('');
-      setSelectedIds([]);
-      fetchApplications();
-    } catch (error: any) {
-      toast.error(error.message || '拒绝失败');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
-  const handleBatchApprove = async () => {
-    if (selectedIds.length === 0) return;
-    
-    setIsSubmitting(true);
-    try {
-      await adminApi.batchApproveApplications(selectedIds);
-      toast.success(`已通过 ${selectedIds.length} 个申请`);
-      setSelectedIds([]);
+      toast.success('申请已拒绝');
+      setRejectModal({ open: false, app: null });
+      setRejectReason('');
       fetchApplications();
     } catch (error: any) {
-      toast.error(error.message || '批量审批失败');
+      console.error('Error rejecting:', error);
+      toast.error('拒绝失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -126,11 +311,10 @@ const AdminApplications = () => {
 
   const getTypeBadge = (type: string) => {
     const config: Record<string, { color: string; label: string }> = {
-      loan: { color: 'bg-blue-500/20 text-blue-500', label: '贷款' },
-      repayment: { color: 'bg-green-500/20 text-green-500', label: '还款' },
-      verify: { color: 'bg-purple-500/20 text-purple-500', label: '实名认证' },
-      recharge: { color: 'bg-yellow-500/20 text-yellow-500', label: '充值' },
+      deposit: { color: 'bg-green-500/20 text-green-500', label: '充值' },
       withdraw: { color: 'bg-orange-500/20 text-orange-500', label: '提现' },
+      loan: { color: 'bg-blue-500/20 text-blue-500', label: '贷款' },
+      kyc: { color: 'bg-purple-500/20 text-purple-500', label: '实名认证' },
     };
     const item = config[type] || { color: 'bg-muted', label: type };
     return <Badge className={item.color}>{item.label}</Badge>;
@@ -149,35 +333,12 @@ const AdminApplications = () => {
               </SelectTrigger>
               <SelectContent className="bg-popover border border-border">
                 <SelectItem value="all">全部类型</SelectItem>
-                <SelectItem value="loan">贷款</SelectItem>
-                <SelectItem value="repayment">还款</SelectItem>
-                <SelectItem value="verify">实名认证</SelectItem>
-                <SelectItem value="recharge">充值</SelectItem>
+                <SelectItem value="deposit">充值</SelectItem>
                 <SelectItem value="withdraw">提现</SelectItem>
+                <SelectItem value="loan">贷款</SelectItem>
+                <SelectItem value="kyc">实名认证</SelectItem>
               </SelectContent>
             </Select>
-            {selectedIds.length > 0 && (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="bg-green-500 hover:bg-green-600"
-                  onClick={handleBatchApprove}
-                  disabled={isSubmitting}
-                >
-                  <Check className="w-4 h-4 mr-1" />
-                  通过 ({selectedIds.length})
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setRejectModal({ open: true, ids: selectedIds })}
-                  disabled={isSubmitting}
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  拒绝 ({selectedIds.length})
-                </Button>
-              </div>
-            )}
           </div>
         </CardTitle>
       </CardHeader>
@@ -186,12 +347,6 @@ const AdminApplications = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedIds.length === applications.length && applications.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
                 <TableHead>用户</TableHead>
                 <TableHead>类型</TableHead>
                 <TableHead>金额</TableHead>
@@ -203,7 +358,7 @@ const AdminApplications = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       加载中...
@@ -212,36 +367,30 @@ const AdminApplications = () => {
                 </TableRow>
               ) : applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     暂无待处理申请
                   </TableCell>
                 </TableRow>
               ) : (
                 applications.map((app) => (
-                  <TableRow key={app.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedIds.includes(app.id)}
-                        onCheckedChange={(checked) => handleSelectOne(app.id, checked as boolean)}
-                      />
-                    </TableCell>
+                  <TableRow key={`${app.table_name}-${app.id}`}>
                     <TableCell className="font-medium">{app.username}</TableCell>
                     <TableCell>{getTypeBadge(app.type)}</TableCell>
                     <TableCell>
-                      {app.amount ? `${app.amount.toLocaleString()} USDT` : '-'}
+                      {app.amount ? `${app.amount.toLocaleString()} ${app.currency || 'USDT'}` : '-'}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(app.createdAt), 'yyyy-MM-dd HH:mm')}
+                      {format(new Date(app.created_at), 'yyyy-MM-dd HH:mm')}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
-                      {app.details ? JSON.stringify(app.details) : '-'}
+                      {app.details || '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button
                           size="sm"
                           className="bg-green-500 hover:bg-green-600"
-                          onClick={() => handleApprove(app.id)}
+                          onClick={() => handleApprove(app)}
                           disabled={isSubmitting}
                         >
                           <Check className="w-4 h-4" />
@@ -249,7 +398,7 @@ const AdminApplications = () => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => setRejectModal({ open: true, ids: [app.id] })}
+                          onClick={() => setRejectModal({ open: true, app })}
                           disabled={isSubmitting}
                         >
                           <X className="w-4 h-4" />
@@ -265,14 +414,14 @@ const AdminApplications = () => {
       </CardContent>
 
       {/* Reject Modal */}
-      <Dialog open={rejectModal.open} onOpenChange={(open) => !open && setRejectModal({ open: false, ids: [] })}>
+      <Dialog open={rejectModal.open} onOpenChange={(open) => !open && setRejectModal({ open: false, app: null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>拒绝申请</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              您即将拒绝 {rejectModal.ids.length} 个申请。
+              您即将拒绝此申请。
             </p>
             <div className="space-y-2">
               <label className="text-sm font-medium">拒绝原因（可选）</label>
@@ -284,7 +433,7 @@ const AdminApplications = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectModal({ open: false, ids: [] })}>
+            <Button variant="outline" onClick={() => setRejectModal({ open: false, app: null })}>
               取消
             </Button>
             <Button variant="destructive" onClick={handleReject} disabled={isSubmitting}>
