@@ -151,25 +151,18 @@ const AdminSmartTrades = () => {
         const profit = trade.amount * profitRate;
         const totalReturn = trade.amount + profit;
         
-        // Update user USDT balance
-        const { data: assetData, error: assetError } = await supabase
-          .from('assets')
-          .select('balance')
-          .eq('user_id', trade.user_id)
-          .eq('currency', 'USDT')
-          .single();
+        // Use the secure admin function to add balance
+        const { data: newBalance, error: balanceError } = await supabase
+          .rpc('admin_add_balance', {
+            _user_id: trade.user_id,
+            _currency: 'USDT',
+            _amount: totalReturn
+          });
 
-        if (assetError) throw assetError;
-
-        const newBalance = (assetData?.balance || 0) + totalReturn;
-        
-        const { error: updateError } = await supabase
-          .from('assets')
-          .update({ balance: newBalance })
-          .eq('user_id', trade.user_id)
-          .eq('currency', 'USDT');
-
-        if (updateError) throw updateError;
+        if (balanceError) {
+          console.error('Balance update error:', balanceError);
+          throw new Error('更新余额失败: ' + balanceError.message);
+        }
 
         // Update transaction status
         const { error: txError } = await supabase
@@ -182,7 +175,7 @@ const AdminSmartTrades = () => {
 
         if (txError) throw txError;
 
-        toast.success(`已设为盈利，用户获得 ${totalReturn.toFixed(2)} USDT`);
+        toast.success(`已设为盈利，用户获得 本金${trade.amount.toFixed(2)} + 利润${profit.toFixed(2)} = ${totalReturn.toFixed(2)} USDT`);
       } else {
         // User loses: amount already deducted, just update status
         const { error: txError } = await supabase
