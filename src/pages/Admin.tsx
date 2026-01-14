@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, FileCheck, History, Settings, LogOut, Shield } from 'lucide-react';
+import { Users, FileCheck, History, Settings, LogOut, Shield, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminUserList from '@/components/admin/AdminUserList';
 import AdminApplications from '@/components/admin/AdminApplications';
 import AdminTransactions from '@/components/admin/AdminTransactions';
 import AdminSettings from '@/components/admin/AdminSettings';
+import AdminSmartTrades from '@/components/admin/AdminSmartTrades';
 
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, logout } = useAuth();
@@ -85,10 +86,14 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="w-full grid grid-cols-4 h-auto p-1 bg-muted/50">
+          <TabsList className="w-full grid grid-cols-5 h-auto p-1 bg-muted/50">
             <TabsTrigger value="users" className="gap-2 py-3 data-[state=active]:bg-background">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">用户管理</span>
+            </TabsTrigger>
+            <TabsTrigger value="trades" className="gap-2 py-3 data-[state=active]:bg-background">
+              <TrendingUp className="w-4 h-4" />
+              <span className="hidden sm:inline">交易控制</span>
             </TabsTrigger>
             <TabsTrigger value="applications" className="gap-2 py-3 data-[state=active]:bg-background">
               <FileCheck className="w-4 h-4" />
@@ -106,6 +111,10 @@ const Admin = () => {
 
           <TabsContent value="users" className="mt-6">
             <AdminUserList />
+          </TabsContent>
+
+          <TabsContent value="trades" className="mt-6">
+            <AdminSmartTrades />
           </TabsContent>
 
           <TabsContent value="applications" className="mt-6">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
@@ -60,17 +60,10 @@ const CRYPTO_ASSETS = [
   { symbol: 'XRP', name: 'XRP', icon: '💧', color: 'bg-gray-500' },
 ];
 
-// Network addresses - ERC20 and ETH share the same address
-const WALLET_ADDRESSES: Record<string, string> = {
-  erc20: '0x8B3a7E2c9F1d4A5b6C8e9D0F1A2B3c4D5E6f7890',
-  trc20: 'TXkd8Jq9vM3Kn5Wp2YhL4Nz7Rf6Bc8Ds2E',
-  eth: '0x8B3a7E2c9F1d4A5b6C8e9D0F1A2B3c4D5E6f7890', // Same as ERC20
-};
-
 const RECHARGE_NETWORKS = [
-  { id: 'erc20', name: 'ERC20-USDT' },
-  { id: 'trc20', name: 'TRC20-USDT' },
-  { id: 'eth', name: 'ETH' },
+  { id: 'ERC20-USDT', name: 'ERC20-USDT' },
+  { id: 'TRC20-USDT', name: 'TRC20-USDT' },
+  { id: 'ETH', name: 'ETH' },
 ];
 
 const MIN_DEPOSITS: Record<string, number> = {
@@ -84,12 +77,13 @@ const Account = () => {
   const [currentView, setCurrentView] = useState<AccountView>('overview');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
-  const [selectedNetwork, setSelectedNetwork] = useState('erc20');
-  const [selectedRechargeNetwork, setSelectedRechargeNetwork] = useState('erc20');
+  const [selectedNetwork, setSelectedNetwork] = useState('ERC20-USDT');
+  const [selectedRechargeNetwork, setSelectedRechargeNetwork] = useState('ERC20-USDT');
   const [copied, setCopied] = useState(false);
   const [rechargeAmount, setRechargeAmount] = useState('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [receiptFileName, setReceiptFileName] = useState('');
+  const [walletAddresses, setWalletAddresses] = useState<Record<string, string>>({});
   
   // Exchange state - must be at top level
   const [fromCurrency, setFromCurrency] = useState('usdt');
@@ -109,6 +103,35 @@ const Account = () => {
   const { kycData, submitKYC, isVerified } = useKYC();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch wallet addresses from database
+  useEffect(() => {
+    const fetchWalletAddresses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_config')
+          .select('key, value')
+          .like('key', 'recharge_address_%');
+
+        if (error) {
+          console.error('Failed to fetch wallet addresses:', error);
+          return;
+        }
+
+        const addressMap: Record<string, string> = {};
+        data?.forEach(item => {
+          // Extract network from key like "recharge_address_ERC20-USDT"
+          const network = item.key.replace('recharge_address_', '');
+          addressMap[network] = item.value;
+        });
+        setWalletAddresses(addressMap);
+      } catch (error) {
+        console.error('Failed to fetch wallet addresses:', error);
+      }
+    };
+
+    fetchWalletAddresses();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -130,7 +153,7 @@ const Account = () => {
   const floatingPnLPercent = -1.42;
 
   // Get current wallet address based on selected network
-  const currentWalletAddress = WALLET_ADDRESSES[selectedRechargeNetwork] || WALLET_ADDRESSES.erc20;
+  const currentWalletAddress = walletAddresses[selectedRechargeNetwork] || '';
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(currentWalletAddress);
@@ -575,7 +598,7 @@ const Account = () => {
               <div className="flex justify-center">
                 <div className="bg-white p-4 rounded-lg border border-border">
                   <QRCodeSVG 
-                    value={WALLET_ADDRESSES[network.id]} 
+                    value={walletAddresses[network.id] || ''}
                     size={160}
                     level="H"
                     includeMargin={true}
@@ -588,7 +611,7 @@ const Account = () => {
                 <p className="text-sm text-muted-foreground">Deposit Address</p>
                 <div className="bg-muted/50 p-4 rounded-lg border border-border">
                   <p className="text-sm break-all font-mono">
-                    {WALLET_ADDRESSES[network.id]}
+                    {walletAddresses[network.id] || 'Loading...'}
                   </p>
                 </div>
                 <Button 
