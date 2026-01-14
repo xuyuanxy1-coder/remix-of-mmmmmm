@@ -34,7 +34,7 @@ const AdminTransactions = () => {
       setTransactions(response.transactions);
       setTotalPages(response.totalPages);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch transactions');
+      toast.error(error.message || '获取交易记录失败');
     } finally {
       setIsLoading(false);
     }
@@ -53,32 +53,33 @@ const AdminTransactions = () => {
   }, [userIdFilter]);
 
   const getTypeBadge = (type: string) => {
-    const colors: Record<string, string> = {
-      trade: 'bg-blue-500/20 text-blue-500',
-      loan: 'bg-purple-500/20 text-purple-500',
-      repayment: 'bg-green-500/20 text-green-500',
-      recharge: 'bg-yellow-500/20 text-yellow-500',
-      withdraw: 'bg-orange-500/20 text-orange-500',
+    const config: Record<string, { color: string; label: string }> = {
+      trade: { color: 'bg-blue-500/20 text-blue-500', label: '交易' },
+      loan: { color: 'bg-purple-500/20 text-purple-500', label: '贷款' },
+      repayment: { color: 'bg-green-500/20 text-green-500', label: '还款' },
+      recharge: { color: 'bg-yellow-500/20 text-yellow-500', label: '充值' },
+      withdraw: { color: 'bg-orange-500/20 text-orange-500', label: '提现' },
     };
-    return <Badge className={colors[type] || 'bg-muted'}>{type.toUpperCase()}</Badge>;
+    const item = config[type] || { color: 'bg-muted', label: type };
+    return <Badge className={item.color}>{item.label}</Badge>;
   };
 
   const getResultBadge = (result?: string) => {
     if (!result) return null;
     return result === 'win' 
-      ? <Badge className="bg-green-500/20 text-green-500">WIN</Badge>
-      : <Badge className="bg-red-500/20 text-red-500">LOSS</Badge>;
+      ? <Badge className="bg-green-500/20 text-green-500">盈利</Badge>
+      : <Badge className="bg-red-500/20 text-red-500">亏损</Badge>;
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Transaction History</span>
+          <span>交易记录</span>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Filter by user ID..."
+              placeholder="按用户ID筛选..."
               value={userIdFilter}
               onChange={(e) => setUserIdFilter(e.target.value)}
               className="pl-9"
@@ -92,12 +93,12 @@ const AdminTransactions = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Result</TableHead>
-                <TableHead>Profit/Loss</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead>用户</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>金额</TableHead>
+                <TableHead>结果</TableHead>
+                <TableHead>盈亏</TableHead>
+                <TableHead>日期</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -106,14 +107,14 @@ const AdminTransactions = () => {
                   <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      Loading...
+                      加载中...
                     </div>
                   </TableCell>
                 </TableRow>
               ) : transactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No transactions found
+                    暂无交易记录
                   </TableCell>
                 </TableRow>
               ) : (
@@ -134,7 +135,7 @@ const AdminTransactions = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(tx.createdAt), 'MMM dd, yyyy HH:mm')}
+                      {format(new Date(tx.createdAt), 'yyyy-MM-dd HH:mm')}
                     </TableCell>
                   </TableRow>
                 ))
@@ -155,7 +156,7 @@ const AdminTransactions = () => {
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
+              第 {page} 页 / 共 {totalPages} 页
             </span>
             <Button
               variant="outline"

@@ -65,8 +65,8 @@ const Admin = () => {
                 <Shield className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h1 className="font-display font-bold text-lg">Admin Dashboard</h1>
-                <p className="text-xs text-muted-foreground">Welcome, {user?.username}</p>
+                <h1 className="font-display font-bold text-lg">管理后台</h1>
+                <p className="text-xs text-muted-foreground">欢迎, {user?.username}</p>
               </div>
             </div>
             <Button
@@ -76,7 +76,7 @@ const Admin = () => {
               className="gap-2"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">退出登录</span>
             </Button>
           </div>
         </div>
@@ -88,19 +88,19 @@ const Admin = () => {
           <TabsList className="w-full grid grid-cols-4 h-auto p-1 bg-muted/50">
             <TabsTrigger value="users" className="gap-2 py-3 data-[state=active]:bg-background">
               <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users</span>
+              <span className="hidden sm:inline">用户管理</span>
             </TabsTrigger>
             <TabsTrigger value="applications" className="gap-2 py-3 data-[state=active]:bg-background">
               <FileCheck className="w-4 h-4" />
-              <span className="hidden sm:inline">Applications</span>
+              <span className="hidden sm:inline">申请审核</span>
             </TabsTrigger>
             <TabsTrigger value="transactions" className="gap-2 py-3 data-[state=active]:bg-background">
               <History className="w-4 h-4" />
-              <span className="hidden sm:inline">Transactions</span>
+              <span className="hidden sm:inline">交易记录</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2 py-3 data-[state=active]:bg-background">
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden sm:inline">系统设置</span>
             </TabsTrigger>
           </TabsList>
 

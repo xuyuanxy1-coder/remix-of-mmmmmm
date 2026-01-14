@@ -351,14 +351,21 @@ const Account = () => {
 
         {/* Logout Button */}
         <div className="mt-6 pt-6 border-t border-border">
-          <Button 
-            variant="outline" 
+          <button 
             onClick={handleLogout}
-            className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            className="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/40 p-4 transition-all duration-300"
           >
-            <LogOut className="w-4 h-4" />
-            Log Out
-          </Button>
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-center justify-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center group-hover:bg-red-500/30 transition-colors">
+                <LogOut className="w-5 h-5 text-red-500" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-red-500">Log Out</p>
+                <p className="text-xs text-muted-foreground">Sign out of your account</p>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
