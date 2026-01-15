@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Menu, X, MessageCircle, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useTawkTo } from '@/hooks/useTawkTo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const Navbar = () => {
+const Navbar = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toggleChat } = useTawkTo();
   const { isAdmin, isAuthenticated } = useAuth();
@@ -168,6 +168,8 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+});
+
+Navbar.displayName = 'Navbar';
 
 export default Navbar;
