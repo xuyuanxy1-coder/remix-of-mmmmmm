@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLoan, MIN_LOAN_AMOUNT, MAX_LOAN_AMOUNT } from '@/contexts/LoanContext';
 import { useKYC } from '@/contexts/KYCContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Coins, Clock, Info, AlertTriangle } from 'lucide-react';
+import { Coins, Clock, Info, AlertTriangle, Ban } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const currencies = [
   { symbol: 'USDT', name: 'Tether' },
@@ -19,8 +21,27 @@ const LoanApplication = () => {
   const [guarantorName, setGuarantorName] = useState('');
   const [guarantorContact, setGuarantorContact] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFrozen, setIsFrozen] = useState(false);
   const { applyLoan, loans } = useLoan();
   const { kycData } = useKYC();
+  const { user } = useAuth();
+
+  // Check if account is frozen
+  useEffect(() => {
+    const checkFrozenStatus = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_frozen')
+        .eq('user_id', user.id)
+        .single();
+      
+      setIsFrozen(data?.is_frozen || false);
+    };
+    
+    checkFrozenStatus();
+  }, [user?.id]);
 
   // Count active loans (approved or overdue status)
   const activeLoans = loans.filter((l) => l.status === 'approved' || l.status === 'overdue');
@@ -74,8 +95,23 @@ const LoanApplication = () => {
         <h3 className="font-semibold text-lg">Apply for Loan</h3>
       </div>
 
+      {/* Account Frozen Warning */}
+      {isFrozen && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Ban className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-red-600 dark:text-red-400">Account Frozen</p>
+              <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">
+                Your account has been frozen. Loan applications are disabled. Please contact customer support.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* KYC Warning */}
-      {kycNotCompleted && (
+      {kycNotCompleted && !isFrozen && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
@@ -95,7 +131,7 @@ const LoanApplication = () => {
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className={`space-y-6 ${isFrozen ? 'opacity-50 pointer-events-none' : ''}`}>
         {/* Currency Selection */}
         <div className="space-y-2">
           <Label>Select Currency</Label>
@@ -201,7 +237,7 @@ const LoanApplication = () => {
           className="w-full btn-primary" 
           size="lg"
           onClick={handleApply}
-          disabled={activeLoans.length >= 3 || kycNotCompleted || isSubmitting}
+          disabled={activeLoans.length >= 3 || kycNotCompleted || isSubmitting || isFrozen}
         >
           {isSubmitting ? 'Submitting...' : 'Apply for Loan'}
         </Button>

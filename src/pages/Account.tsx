@@ -20,7 +20,9 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  LogOut
+  LogOut,
+  Ban,
+  History
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
@@ -141,6 +143,45 @@ const Account = () => {
 
   // Check if user has active loans (approved or overdue status)
   const hasActiveLoan = loans.some(loan => loan.status === 'approved' || loan.status === 'overdue');
+
+  // Check if account is frozen
+  const [isFrozen, setIsFrozen] = useState(false);
+  const [withdrawHistory, setWithdrawHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const checkFrozenStatus = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_frozen')
+        .eq('user_id', user.id)
+        .single();
+      
+      setIsFrozen(data?.is_frozen || false);
+    };
+    
+    checkFrozenStatus();
+  }, [user?.id]);
+
+  // Fetch withdrawal history
+  useEffect(() => {
+    const fetchWithdrawHistory = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('type', 'withdraw')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      setWithdrawHistory(data || []);
+    };
+    
+    fetchWithdrawHistory();
+  }, [user?.id]);
   const totalAssets = CRYPTO_ASSETS.reduce((total, crypto) => {
     const balance = getBalance(crypto.symbol);
     const priceData = getPrice(crypto.symbol);
@@ -454,10 +495,38 @@ const Account = () => {
     </div>
   );
 
+  const isActionDisabled = hasActiveLoan || isFrozen;
+
+  const getStatusBadge = (status: string) => {
+    const config: Record<string, { color: string; label: string }> = {
+      pending: { color: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400', label: 'Pending' },
+      completed: { color: 'bg-green-500/20 text-green-600 dark:text-green-400', label: 'Completed' },
+      cancelled: { color: 'bg-red-500/20 text-red-600 dark:text-red-400', label: 'Cancelled' },
+      failed: { color: 'bg-red-500/20 text-red-600 dark:text-red-400', label: 'Failed' },
+    };
+    const item = config[status] || { color: 'bg-muted', label: status };
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.color}`}>{item.label}</span>;
+  };
+
   const renderWithdraw = () => (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Account Frozen Warning */}
+      {isFrozen && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <Ban className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-red-600 dark:text-red-400">Account Frozen</p>
+              <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">
+                Your account has been frozen. Withdrawals, trades, exchanges, and loans are disabled. Please contact customer support.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Active Loan Warning */}
-      {hasActiveLoan && (
+      {hasActiveLoan && !isFrozen && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
@@ -471,7 +540,7 @@ const Account = () => {
         </div>
       )}
 
-      <div className={`bg-card border border-border rounded-2xl p-6 ${hasActiveLoan ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`bg-card border border-border rounded-2xl p-6 ${isActionDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="space-y-6">
           {/* Network Selection */}
           <div>
@@ -558,6 +627,39 @@ const Account = () => {
             <span>For P2P fiat trading, please contact customer service.</span>
           </div>
         </div>
+      </div>
+
+      {/* Withdrawal History */}
+      <div className="bg-card border border-border rounded-2xl p-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <History className="w-5 h-5" />
+          Withdrawal History
+        </h3>
+        {withdrawHistory.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No withdrawal records</p>
+        ) : (
+          <div className="space-y-3">
+            {withdrawHistory.map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{tx.amount} {tx.currency}</span>
+                    {getStatusBadge(tx.status)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {tx.to_address ? `To: ${tx.to_address.slice(0, 10)}...${tx.to_address.slice(-8)}` : 'No address'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(tx.created_at).toLocaleString()} · {tx.network?.toUpperCase() || 'N/A'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  {tx.fee && <p className="text-xs text-muted-foreground">Fee: {tx.fee} USDT</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -722,6 +824,10 @@ const Account = () => {
   };
 
   const handleExchange = () => {
+    if (isFrozen) {
+      toast.error('Your account is frozen. Exchange is disabled.');
+      return;
+    }
     if (!exchangeAmount || parseFloat(exchangeAmount) <= 0) {
       toast.error('Please enter a valid amount');
       return;

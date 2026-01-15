@@ -217,6 +217,18 @@ const TradingPanel = ({ symbol, currentPrice }: TradingPanelProps) => {
       return;
     }
 
+    // Check if account is frozen
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_frozen')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (profile?.is_frozen) {
+      toast.error('Your account is frozen. Trading is disabled.');
+      return;
+    }
+
     const usdtNum = parseFloat(usdtAmount);
 
     if (isNaN(usdtNum) || usdtNum <= 0) {

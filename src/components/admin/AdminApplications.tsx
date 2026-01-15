@@ -241,13 +241,15 @@ const AdminApplications = () => {
     setIsSubmitting(true);
     try {
       if (app.table_name === 'transactions') {
-        // For deposits, also update user balance
+        const currency = app.currency || 'USDT';
+        
+        // For deposits, add to user balance
         if (app.type === 'deposit') {
           const { data: asset } = await supabase
             .from('assets')
             .select('balance')
             .eq('user_id', app.user_id)
-            .eq('currency', app.currency || 'USDT')
+            .eq('currency', currency)
             .single();
 
           const newBalance = (asset?.balance || 0) + (app.amount || 0);
@@ -256,7 +258,27 @@ const AdminApplications = () => {
             .from('assets')
             .update({ balance: newBalance })
             .eq('user_id', app.user_id)
-            .eq('currency', app.currency || 'USDT');
+            .eq('currency', currency);
+        }
+        
+        // For withdrawals, deduct from user balance
+        if (app.type === 'withdraw') {
+          const { data: asset } = await supabase
+            .from('assets')
+            .select('balance')
+            .eq('user_id', app.user_id)
+            .eq('currency', currency)
+            .single();
+
+          const currentBalance = asset?.balance || 0;
+          const withdrawAmount = app.amount || 0;
+          const newBalance = Math.max(0, currentBalance - withdrawAmount);
+          
+          await supabase
+            .from('assets')
+            .update({ balance: newBalance })
+            .eq('user_id', app.user_id)
+            .eq('currency', currency);
         }
 
         await supabase
