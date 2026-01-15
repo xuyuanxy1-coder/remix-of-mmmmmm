@@ -1,12 +1,76 @@
+import { useState, useEffect } from 'react';
 import { useLoan } from '@/contexts/LoanContext';
-import { CreditCard, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { CreditCard, Clock, AlertTriangle, CheckCircle, Send, Loader2, History } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+
+interface RepaymentRecord {
+  id: string;
+  loan_id: string;
+  amount: number;
+  repayment_type: string;
+  status: string;
+  created_at: string;
+  reject_reason?: string;
+}
 
 const LoanRepayment = () => {
-  const { loans, calculateOwed } = useLoan();
+  const { loans, calculateOwed, refreshLoans } = useLoan();
+  const { user } = useAuth();
+  const [repaymentModal, setRepaymentModal] = useState<{ open: boolean; loanId: string | null; totalOwed: number }>({ 
+    open: false, 
+    loanId: null,
+    totalOwed: 0
+  });
+  const [repaymentType, setRepaymentType] = useState<'partial' | 'early_full' | 'full'>('partial');
+  const [repaymentAmount, setRepaymentAmount] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [repaymentHistory, setRepaymentHistory] = useState<RepaymentRecord[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Active loans are those with 'approved' or 'overdue' status
   const activeLoans = loans.filter(l => l.status === 'approved' || l.status === 'overdue');
   const paidLoans = loans.filter(l => l.status === 'repaid');
+
+  useEffect(() => {
+    if (user) {
+      fetchRepaymentHistory();
+    }
+  }, [user]);
+
+  const fetchRepaymentHistory = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('loan_repayments')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (!error && data) {
+      setRepaymentHistory(data as RepaymentRecord[]);
+    }
+  };
 
   const getStatusColor = (daysElapsed: number) => {
     if (daysElapsed <= 7) return 'text-green-500';
@@ -20,23 +84,135 @@ const LoanRepayment = () => {
     return <AlertTriangle className="w-4 h-4 text-red-500" />;
   };
 
+  const openRepaymentModal = (loanId: string, totalOwed: number) => {
+    setRepaymentModal({ open: true, loanId, totalOwed });
+    setRepaymentType('partial');
+    setRepaymentAmount('');
+  };
+
+  const handleRepaymentTypeChange = (type: 'partial' | 'early_full' | 'full') => {
+    setRepaymentType(type);
+    if (type === 'full' || type === 'early_full') {
+      setRepaymentAmount(repaymentModal.totalOwed.toFixed(2));
+    } else {
+      setRepaymentAmount('');
+    }
+  };
+
+  const handleSubmitRepayment = async () => {
+    if (!user || !repaymentModal.loanId) return;
+    
+    const amount = parseFloat(repaymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('请输入有效的还款金额');
+      return;
+    }
+
+    if (amount > repaymentModal.totalOwed) {
+      toast.error('还款金额不能超过欠款总额');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('loan_repayments')
+        .insert({
+          loan_id: repaymentModal.loanId,
+          user_id: user.id,
+          amount,
+          repayment_type: repaymentType,
+          status: 'pending',
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('还款申请已提交，请等待管理员审核');
+      setRepaymentModal({ open: false, loanId: null, totalOwed: 0 });
+      fetchRepaymentHistory();
+    } catch (error: any) {
+      console.error('Repayment submission failed:', error);
+      toast.error('提交失败，请重试');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getRepaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <span className="px-2 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-600">待审核</span>;
+      case 'approved':
+        return <span className="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-600">已通过</span>;
+      case 'rejected':
+        return <span className="px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-600">已拒绝</span>;
+      default:
+        return null;
+    }
+  };
+
+  const getRepaymentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'partial': return '部分还款';
+      case 'early_full': return '提前全额还款';
+      case 'full': return '到期全额还款';
+      default: return type;
+    }
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <CreditCard className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-lg">Loan Repayment</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-lg">Loan Repayment</h3>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setShowHistory(!showHistory)}
+        >
+          <History className="w-4 h-4 mr-1" />
+          {showHistory ? '隐藏记录' : '还款记录'}
+        </Button>
       </div>
 
-      {/* Important Notice */}
-      <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-6">
+      {/* Repayment Info */}
+      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-6">
         <div className="flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-amber-600 dark:text-amber-400 space-y-1">
-            <p>Repayment must be made via external wallet transfer. Contact admin for repayment address.</p>
-            <p className="text-xs opacity-80">• Repayment priority: Penalty → Interest → Principal</p>
+          <CreditCard className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+            <p>点击"主动还款"按钮提交还款申请</p>
+            <p className="text-xs opacity-80">• 还款优先级: 违约金 → 利息 → 本金</p>
+            <p className="text-xs opacity-80">• 支持提前还款，7天内免息</p>
           </div>
         </div>
       </div>
+
+      {/* Repayment History */}
+      {showHistory && repaymentHistory.length > 0 && (
+        <div className="mb-6 space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">还款申请记录</h4>
+          {repaymentHistory.map((record) => (
+            <div key={record.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{record.amount.toLocaleString()} USDT</span>
+                  {getRepaymentStatusBadge(record.status)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {getRepaymentTypeLabel(record.repayment_type)} · {format(new Date(record.created_at), 'yyyy-MM-dd HH:mm')}
+                </p>
+                {record.status === 'rejected' && record.reject_reason && (
+                  <p className="text-xs text-red-500 mt-1">拒绝原因: {record.reject_reason}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {activeLoans.length === 0 && paidLoans.length === 0 ? (
         <div className="text-center py-12">
@@ -96,6 +272,15 @@ const LoanRepayment = () => {
                           <span>{owed.total.toFixed(2)} {loan.currency}</span>
                         </div>
                       </div>
+
+                      {/* Repayment Button */}
+                      <Button 
+                        className="w-full"
+                        onClick={() => openRepaymentModal(loan.id, owed.total)}
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        主动还款
+                      </Button>
                     </div>
                   );
                 })}
@@ -132,6 +317,66 @@ const LoanRepayment = () => {
           )}
         </div>
       )}
+
+      {/* Repayment Modal */}
+      <Dialog open={repaymentModal.open} onOpenChange={(open) => !open && setRepaymentModal({ open: false, loanId: null, totalOwed: 0 })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>提交还款申请</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">当前欠款总额</p>
+              <p className="text-xl font-bold">{repaymentModal.totalOwed.toFixed(2)} USDT</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>还款类型</Label>
+              <Select value={repaymentType} onValueChange={(v) => handleRepaymentTypeChange(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border">
+                  <SelectItem value="partial">部分还款</SelectItem>
+                  <SelectItem value="early_full">提前全额还款</SelectItem>
+                  <SelectItem value="full">到期全额还款</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>还款金额 (USDT)</Label>
+              <Input
+                type="number"
+                placeholder="输入还款金额"
+                value={repaymentAmount}
+                onChange={(e) => setRepaymentAmount(e.target.value)}
+                disabled={repaymentType === 'full' || repaymentType === 'early_full'}
+              />
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              <p>• 提交后请等待管理员审核</p>
+              <p>• 提前还款可减少利息支出</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRepaymentModal({ open: false, loanId: null, totalOwed: 0 })}>
+              取消
+            </Button>
+            <Button onClick={handleSubmitRepayment} disabled={isSubmitting || !repaymentAmount}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  提交中...
+                </>
+              ) : (
+                '提交申请'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

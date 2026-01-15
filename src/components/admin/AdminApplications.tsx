@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -27,11 +26,11 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Check, X, Filter } from 'lucide-react';
+import { Check, X, Filter, Image, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
-type ApplicationType = 'deposit' | 'withdraw' | 'loan' | 'kyc';
+type ApplicationType = 'deposit' | 'withdraw' | 'loan' | 'kyc' | 'repayment';
 
 interface Application {
   id: string;
@@ -44,16 +43,27 @@ interface Application {
   created_at: string;
   details?: string;
   table_name: string;
+  // KYC specific fields
+  front_image_url?: string;
+  back_image_url?: string;
+  selfie_url?: string;
+  real_name?: string;
+  id_type?: string;
+  id_number?: string;
+  // Repayment specific
+  loan_id?: string;
+  repayment_type?: string;
 }
 
 const AdminApplications = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [rejectModal, setRejectModal] = useState<{ open: boolean; app: Application | null }>({ open: false, app: null });
   const [rejectReason, setRejectReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [kycDetailModal, setKycDetailModal] = useState<{ open: boolean; app: Application | null }>({ open: false, app: null });
+  const [imagePreview, setImagePreview] = useState<{ open: boolean; url: string; title: string }>({ open: false, url: '', title: '' });
 
   const fetchApplications = async () => {
     setIsLoading(true);
@@ -135,6 +145,43 @@ const AdminApplications = () => {
         }
       }
 
+      // Fetch pending loan repayments
+      if (typeFilter === 'all' || typeFilter === 'repayment') {
+        const { data: repayments } = await supabase
+          .from('loan_repayments')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        if (repayments) {
+          const userIds = [...new Set(repayments.map(r => r.user_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, username, email')
+            .in('user_id', userIds);
+
+          repayments.forEach(repayment => {
+            const profile = profiles?.find(p => p.user_id === repayment.user_id);
+            const typeLabel = repayment.repayment_type === 'early_full' ? '提前全额' : 
+                             repayment.repayment_type === 'full' ? '到期全额' : '部分';
+            allApplications.push({
+              id: repayment.id,
+              user_id: repayment.user_id,
+              username: profile?.username || profile?.email || repayment.user_id.slice(0, 8),
+              type: 'repayment',
+              amount: repayment.amount,
+              currency: 'USDT',
+              status: repayment.status,
+              created_at: repayment.created_at,
+              details: `${typeLabel}还款`,
+              table_name: 'loan_repayments',
+              loan_id: repayment.loan_id,
+              repayment_type: repayment.repayment_type,
+            });
+          });
+        }
+      }
+
       // Fetch pending KYC
       if (typeFilter === 'all' || typeFilter === 'kyc') {
         const { data: kycRecords } = await supabase
@@ -161,6 +208,12 @@ const AdminApplications = () => {
               created_at: kyc.created_at,
               details: `姓名: ${kyc.real_name}, 证件: ${kyc.id_type}`,
               table_name: 'kyc_records',
+              front_image_url: kyc.front_image_url || undefined,
+              back_image_url: kyc.back_image_url || undefined,
+              selfie_url: kyc.selfie_url || undefined,
+              real_name: kyc.real_name,
+              id_type: kyc.id_type,
+              id_number: kyc.id_number,
             });
           });
         }
@@ -181,22 +234,6 @@ const AdminApplications = () => {
   useEffect(() => {
     fetchApplications();
   }, [typeFilter]);
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(applications.map(app => app.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleSelectOne = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds([...selectedIds, id]);
-    } else {
-      setSelectedIds(selectedIds.filter(i => i !== id));
-    }
-  };
 
   const handleApprove = async (app: Application) => {
     setIsSubmitting(true);
@@ -249,6 +286,30 @@ const AdminApplications = () => {
             due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
           })
           .eq('id', app.id);
+      } else if (app.table_name === 'loan_repayments') {
+        // Approve repayment - update repayment status
+        await supabase
+          .from('loan_repayments')
+          .update({ 
+            status: 'approved',
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('id', app.id);
+
+        // If full repayment, mark loan as repaid
+        if (app.repayment_type === 'full' || app.repayment_type === 'early_full') {
+          await supabase
+            .from('loans')
+            .update({ 
+              status: 'repaid',
+              repaid_at: new Date().toISOString(),
+            })
+            .eq('id', app.loan_id);
+        }
+
+        toast.success('还款申请已通过');
+        fetchApplications();
+        return;
       } else if (app.table_name === 'kyc_records') {
         await supabase
           .from('kyc_records')
@@ -286,6 +347,15 @@ const AdminApplications = () => {
           .from('loans')
           .update({ status: 'rejected' })
           .eq('id', app.id);
+      } else if (app.table_name === 'loan_repayments') {
+        await supabase
+          .from('loan_repayments')
+          .update({ 
+            status: 'rejected',
+            reject_reason: rejectReason,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('id', app.id);
       } else if (app.table_name === 'kyc_records') {
         await supabase
           .from('kyc_records')
@@ -315,9 +385,14 @@ const AdminApplications = () => {
       withdraw: { color: 'bg-orange-500/20 text-orange-500', label: '提现' },
       loan: { color: 'bg-blue-500/20 text-blue-500', label: '贷款' },
       kyc: { color: 'bg-purple-500/20 text-purple-500', label: '实名认证' },
+      repayment: { color: 'bg-cyan-500/20 text-cyan-500', label: '贷款还款' },
     };
     const item = config[type] || { color: 'bg-muted', label: type };
     return <Badge className={item.color}>{item.label}</Badge>;
+  };
+
+  const openImagePreview = (url: string, title: string) => {
+    setImagePreview({ open: true, url, title });
   };
 
   return (
@@ -336,6 +411,7 @@ const AdminApplications = () => {
                 <SelectItem value="deposit">充值</SelectItem>
                 <SelectItem value="withdraw">提现</SelectItem>
                 <SelectItem value="loan">贷款</SelectItem>
+                <SelectItem value="repayment">贷款还款</SelectItem>
                 <SelectItem value="kyc">实名认证</SelectItem>
               </SelectContent>
             </Select>
@@ -383,7 +459,19 @@ const AdminApplications = () => {
                       {format(new Date(app.created_at), 'yyyy-MM-dd HH:mm')}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
-                      {app.details || '-'}
+                      <div className="flex items-center gap-2">
+                        <span className="truncate">{app.details || '-'}</span>
+                        {app.type === 'kyc' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setKycDetailModal({ open: true, app })}
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            查看
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
@@ -440,6 +528,139 @@ const AdminApplications = () => {
               {isSubmitting ? '处理中...' : '确认拒绝'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* KYC Detail Modal */}
+      <Dialog open={kycDetailModal.open} onOpenChange={(open) => !open && setKycDetailModal({ open: false, app: null })}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>实名认证详情</DialogTitle>
+          </DialogHeader>
+          {kycDetailModal.app && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">真实姓名</p>
+                  <p className="font-medium">{kycDetailModal.app.real_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">证件类型</p>
+                  <p className="font-medium">{kycDetailModal.app.id_type}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">证件号码</p>
+                  <p className="font-medium">{kycDetailModal.app.id_number}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <p className="text-sm font-medium">证件照片</p>
+                <div className="grid grid-cols-3 gap-4">
+                  {kycDetailModal.app.front_image_url ? (
+                    <div 
+                      className="border rounded-lg p-2 cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => openImagePreview(kycDetailModal.app!.front_image_url!, '证件正面')}
+                    >
+                      <img 
+                        src={kycDetailModal.app.front_image_url} 
+                        alt="证件正面"
+                        className="w-full h-24 object-cover rounded"
+                      />
+                      <p className="text-xs text-center mt-1 text-muted-foreground">证件正面</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg p-2 flex items-center justify-center h-32 bg-muted">
+                      <p className="text-xs text-muted-foreground">未上传</p>
+                    </div>
+                  )}
+                  
+                  {kycDetailModal.app.back_image_url ? (
+                    <div 
+                      className="border rounded-lg p-2 cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => openImagePreview(kycDetailModal.app!.back_image_url!, '证件背面')}
+                    >
+                      <img 
+                        src={kycDetailModal.app.back_image_url} 
+                        alt="证件背面"
+                        className="w-full h-24 object-cover rounded"
+                      />
+                      <p className="text-xs text-center mt-1 text-muted-foreground">证件背面</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg p-2 flex items-center justify-center h-32 bg-muted">
+                      <p className="text-xs text-muted-foreground">未上传</p>
+                    </div>
+                  )}
+                  
+                  {kycDetailModal.app.selfie_url ? (
+                    <div 
+                      className="border rounded-lg p-2 cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => openImagePreview(kycDetailModal.app!.selfie_url!, '手持证件照')}
+                    >
+                      <img 
+                        src={kycDetailModal.app.selfie_url} 
+                        alt="手持证件照"
+                        className="w-full h-24 object-cover rounded"
+                      />
+                      <p className="text-xs text-center mt-1 text-muted-foreground">手持证件照</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg p-2 flex items-center justify-center h-32 bg-muted">
+                      <p className="text-xs text-muted-foreground">未上传</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setKycDetailModal({ open: false, app: null })}>
+              关闭
+            </Button>
+            <Button
+              className="bg-green-500 hover:bg-green-600"
+              onClick={() => {
+                if (kycDetailModal.app) {
+                  handleApprove(kycDetailModal.app);
+                  setKycDetailModal({ open: false, app: null });
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              <Check className="w-4 h-4 mr-1" />
+              通过
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (kycDetailModal.app) {
+                  setRejectModal({ open: true, app: kycDetailModal.app });
+                  setKycDetailModal({ open: false, app: null });
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              <X className="w-4 h-4 mr-1" />
+              拒绝
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      <Dialog open={imagePreview.open} onOpenChange={(open) => !open && setImagePreview({ open: false, url: '', title: '' })}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{imagePreview.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            <img 
+              src={imagePreview.url} 
+              alt={imagePreview.title}
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

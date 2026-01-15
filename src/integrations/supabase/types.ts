@@ -92,6 +92,56 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_repayments: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          id: string
+          loan_id: string
+          receipt_image_url: string | null
+          reject_reason: string | null
+          repayment_type: string
+          reviewed_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          loan_id: string
+          receipt_image_url?: string | null
+          reject_reason?: string | null
+          repayment_type?: string
+          reviewed_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          loan_id?: string
+          receipt_image_url?: string | null
+          reject_reason?: string | null
+          repayment_type?: string
+          reviewed_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_repayments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loans: {
         Row: {
           amount: number
