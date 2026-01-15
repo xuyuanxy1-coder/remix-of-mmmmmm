@@ -3,7 +3,7 @@ import { useLoan } from '@/contexts/LoanContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Clock, AlertTriangle, CheckCircle, Send, History, Upload } from 'lucide-react';
+import { CreditCard, Clock, AlertTriangle, CheckCircle, Send, History, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -246,14 +246,14 @@ const LoanRepayment = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-orange-500" />
-              <span className="font-medium text-orange-600 dark:text-orange-400">Total Remaining Balance</span>
+              <span className="font-medium text-orange-600 dark:text-orange-400">{t('loan.totalRemainingBalance')}</span>
             </div>
             <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {totalRemainingOwed.toFixed(2)} USDT
             </span>
           </div>
           <div className="mt-2 text-xs text-muted-foreground">
-            {activeLoans.length} outstanding loan{activeLoans.length > 1 ? 's' : ''}
+            {activeLoans.length} {t('loan.outstandingLoans').toLowerCase()}
           </div>
         </div>
       )}
@@ -263,9 +263,9 @@ const LoanRepayment = () => {
         <div className="flex items-start gap-2">
           <CreditCard className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
-            <p>Click "Repay Now" to submit a repayment request</p>
-            <p className="text-xs opacity-80">• Payment priority: Penalty → Interest → Principal</p>
-            <p className="text-xs opacity-80">• Early repayment supported, no interest for first 7 days</p>
+            <p>{t('loan.repaymentInfo1')}</p>
+            <p className="text-xs opacity-80">{t('loan.repaymentInfo2')}</p>
+            <p className="text-xs opacity-80">{t('loan.repaymentInfo3')}</p>
           </div>
         </div>
       </div>
@@ -276,14 +276,14 @@ const LoanRepayment = () => {
           <div className="bg-muted/50 px-4 py-3 border-b border-border flex items-center justify-between">
             <h4 className="font-medium flex items-center gap-2">
               <History className="w-4 h-4" />
-              Repayment History
+              {t('loan.repaymentHistoryTitle')}
             </h4>
-            <span className="text-xs text-muted-foreground">{repaymentHistory.length} records</span>
+            <span className="text-xs text-muted-foreground">{repaymentHistory.length} {t('loan.records')}</span>
           </div>
           {repaymentHistory.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground">
               <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No repayment records</p>
+              <p className="text-sm">{t('loan.noRepaymentRecords')}</p>
             </div>
           ) : (
             <div className="max-h-64 overflow-y-auto">
@@ -298,14 +298,14 @@ const LoanRepayment = () => {
                       {getRepaymentTypeLabel(record.repayment_type)} · {format(new Date(record.created_at), 'yyyy-MM-dd HH:mm')}
                     </p>
                     {record.status === 'rejected' && record.reject_reason && (
-                      <p className="text-xs text-red-500 mt-1">Rejection reason: {record.reject_reason}</p>
+                      <p className="text-xs text-red-500 mt-1">{t('loan.rejectedReason')}: {record.reject_reason}</p>
                     )}
                   </div>
                   {record.receipt_image_url && (
                     <div className="ml-2">
-                      <img 
-                        src={record.receipt_image_url} 
-                        alt="Receipt" 
+                      <img
+                        src={record.receipt_image_url}
+                        alt={t('loan.receiptAlt')}
                         className="w-10 h-10 rounded object-cover cursor-pointer hover:opacity-80"
                         onClick={() => window.open(record.receipt_image_url, '_blank')}
                       />
@@ -321,26 +321,21 @@ const LoanRepayment = () => {
       {activeLoans.length === 0 && paidLoans.length === 0 ? (
         <div className="text-center py-12">
           <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No loans found</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Go to the loan application page to apply for a loan
-          </p>
+          <p className="text-muted-foreground">{t('loan.noLoansFound')}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('loan.goToApplyHint')}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* Active Loans */}
           {activeLoans.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-3">Outstanding Loans</h4>
+              <h4 className="text-sm font-medium text-muted-foreground mb-3">{t('loan.outstandingLoans')}</h4>
               <div className="space-y-4">
                 {activeLoans.map((loan) => {
                   const owed = calculateOwed(loan);
 
                   return (
-                    <div 
-                      key={loan.id} 
-                      className="bg-muted/50 rounded-lg p-4 border border-border"
-                    >
+                    <div key={loan.id} className="bg-muted/50 rounded-lg p-4 border border-border">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           {getStatusIcon(owed.daysElapsed)}
@@ -356,30 +351,27 @@ const LoanRepayment = () => {
                       {/* Owed Breakdown */}
                       <div className="space-y-2 text-sm mb-4 bg-muted/30 rounded-lg p-3">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Principal</span>
+                          <span className="text-muted-foreground">{t('loan.principal')}</span>
                           <span className="font-medium">{owed.principal.toLocaleString()} {loan.currency}</span>
                         </div>
                         <div className="flex justify-between text-yellow-600 dark:text-yellow-400">
-                          <span>Interest (1%/day)</span>
+                          <span>{t('loan.interest')} (1%/day)</span>
                           <span>{owed.interest > 0 ? '+' : ''}{owed.interest.toFixed(2)} {loan.currency}</span>
                         </div>
                         <div className="flex justify-between text-red-600 dark:text-red-400">
-                          <span>Penalty (2%/day)</span>
+                          <span>{t('loan.penalty')} (2%/day)</span>
                           <span>{owed.penalty > 0 ? '+' : ''}{owed.penalty.toFixed(2)} {loan.currency}</span>
                         </div>
                         <div className="flex justify-between font-bold pt-2 border-t border-border text-base">
-                          <span>Total Owed</span>
+                          <span>{t('loan.totalOwed')}</span>
                           <span className="text-primary">{owed.total.toFixed(2)} {loan.currency}</span>
                         </div>
                       </div>
 
                       {/* Repayment Button */}
-                      <Button 
-                        className="w-full"
-                        onClick={() => openRepaymentModal(loan.id, owed)}
-                      >
+                      <Button className="w-full" onClick={() => openRepaymentModal(loan.id, owed)}>
                         <Send className="w-4 h-4 mr-2" />
-                        Repay Now
+                        {t('loan.repayNow')}
                       </Button>
                     </div>
                   );
@@ -391,19 +383,16 @@ const LoanRepayment = () => {
           {/* Paid Loans */}
           {paidLoans.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-3">Paid Off Loans</h4>
+              <h4 className="text-sm font-medium text-muted-foreground mb-3">{t('loan.paidOffLoans')}</h4>
               <div className="space-y-2">
                 {paidLoans.slice(-5).map((loan) => (
-                  <div 
-                    key={loan.id} 
-                    className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg"
-                  >
+                  <div key={loan.id} className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
                       <span className="text-sm">{loan.amount} {loan.currency}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-green-600 dark:text-green-400">Paid Off</span>
+                      <span className="text-xs text-green-600 dark:text-green-400">{t('loan.fullyPaid')}</span>
                       {loan.repaidDate && (
                         <p className="text-xs text-muted-foreground">
                           {new Date(loan.repaidDate).toLocaleDateString()}
@@ -422,48 +411,48 @@ const LoanRepayment = () => {
       <Dialog open={repaymentModal.open} onOpenChange={(open) => !open && setRepaymentModal({ open: false, loanId: null, totalOwed: 0, principal: 0, interest: 0, penalty: 0 })}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Submit Repayment Request</DialogTitle>
+            <DialogTitle>{t('loan.submitRepaymentRequest')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Detailed breakdown */}
             <div className="bg-muted rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Principal</span>
+                <span className="text-muted-foreground">{t('loan.principal')}</span>
                 <span>{repaymentModal.principal.toFixed(2)} USDT</span>
               </div>
               <div className="flex justify-between text-sm text-yellow-600 dark:text-yellow-400">
-                <span>Interest</span>
+                <span>{t('loan.interest')}</span>
                 <span>+{repaymentModal.interest.toFixed(2)} USDT</span>
               </div>
               <div className="flex justify-between text-sm text-red-600 dark:text-red-400">
-                <span>Penalty</span>
+                <span>{t('loan.penalty')}</span>
                 <span>+{repaymentModal.penalty.toFixed(2)} USDT</span>
               </div>
               <div className="flex justify-between font-bold pt-2 border-t border-border">
-                <span>Total Owed</span>
+                <span>{t('loan.totalOwed')}</span>
                 <span className="text-primary text-lg">{repaymentModal.totalOwed.toFixed(2)} USDT</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Repayment Type</Label>
+              <Label>{t('loan.repaymentType')}</Label>
               <Select value={repaymentType} onValueChange={(v) => handleRepaymentTypeChange(v as any)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border">
-                  <SelectItem value="partial">Partial Repayment</SelectItem>
-                  <SelectItem value="early_full">Early Full Repayment</SelectItem>
-                  <SelectItem value="full">Full Repayment (On Due Date)</SelectItem>
+                  <SelectItem value="partial">{t('loan.partialRepayment')}</SelectItem>
+                  <SelectItem value="early_full">{t('loan.earlyFullRepayment')}</SelectItem>
+                  <SelectItem value="full">{t('loan.fullRepaymentOnDue')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Repayment Amount (USDT)</Label>
+              <Label>{t('loan.repaymentAmount')} (USDT)</Label>
               <Input
                 type="number"
-                placeholder="Enter repayment amount"
+                placeholder={t('loan.enterRepaymentAmount')}
                 value={repaymentAmount}
                 onChange={(e) => setRepaymentAmount(e.target.value)}
                 disabled={repaymentType === 'full' || repaymentType === 'early_full'}
@@ -472,7 +461,7 @@ const LoanRepayment = () => {
 
             {/* Receipt Upload */}
             <div className="space-y-2">
-              <Label>Payment Receipt (Optional)</Label>
+              <Label>{t('loan.paymentReceipt')}</Label>
               <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
                 <input
                   type="file"
@@ -484,14 +473,14 @@ const LoanRepayment = () => {
                 <label htmlFor="receipt-upload" className="cursor-pointer">
                   {receiptImage ? (
                     <div className="space-y-2">
-                      <img src={receiptImage} alt="Receipt" className="max-h-32 mx-auto rounded-lg" />
+                      <img src={receiptImage} alt={t('loan.receiptAlt')} className="max-h-32 mx-auto rounded-lg" />
                       <p className="text-xs text-muted-foreground">{receiptFileName}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">Upload payment receipt</p>
-                      <p className="text-xs text-muted-foreground">Max 5MB, JPG/PNG supported</p>
+                      <p className="text-sm text-muted-foreground">{t('loan.uploadPaymentReceipt')}</p>
+                      <p className="text-xs text-muted-foreground">{t('loan.uploadLimit')}</p>
                     </div>
                   )}
                 </label>
@@ -499,22 +488,22 @@ const LoanRepayment = () => {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              <p>• Awaiting admin review after submission</p>
-              <p>• Early repayment can reduce interest</p>
+              <p>• {t('loan.awaitingAdminReview')}</p>
+              <p>• {t('loan.earlyRepaymentReduceInterest')}</p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRepaymentModal({ open: false, loanId: null, totalOwed: 0, principal: 0, interest: 0, penalty: 0 })}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmitRepayment} disabled={isSubmitting || !repaymentAmount}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
+                  {t('loan.submitting')}
                 </>
               ) : (
-                'Confirm Submit'
+                t('loan.confirmSubmit')
               )}
             </Button>
           </DialogFooter>

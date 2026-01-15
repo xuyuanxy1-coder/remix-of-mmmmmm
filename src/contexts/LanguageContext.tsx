@@ -247,7 +247,16 @@ const translations: Record<Language, Record<string, string>> = {
     'loan.submissionFailedTryAgain': 'Submission failed, please try again',
     'loan.imageTooLarge': 'Image size must be less than 5MB',
     'loan.receiptAlt': 'Receipt',
-    
+    'loan.repaymentAmount': 'Repayment Amount',
+    'loan.enterRepaymentAmount': 'Enter repayment amount',
+    'loan.paymentReceipt': 'Payment Receipt (Optional)',
+    'loan.uploadPaymentReceipt': 'Upload payment receipt',
+    'loan.uploadLimit': 'Max 5MB, JPG/PNG supported',
+    'loan.awaitingAdminReview': 'Awaiting admin review after submission',
+    'loan.earlyRepaymentReduceInterest': 'Early repayment can reduce interest',
+    'loan.confirmSubmit': 'Confirm Submit',
+
+
     // Account Page
     'account.totalAssets': 'Account Total Assets',
     'account.floatingPnL': 'Floating P&L',
@@ -594,7 +603,15 @@ const translations: Record<Language, Record<string, string>> = {
     'loan.submissionFailedTryAgain': '提交失败，请重试',
     'loan.imageTooLarge': '图片大小需小于 5MB',
     'loan.receiptAlt': '回执',
-    
+    'loan.repaymentAmount': '还款金额',
+    'loan.enterRepaymentAmount': '请输入还款金额',
+    'loan.paymentReceipt': '付款凭证（可选）',
+    'loan.uploadPaymentReceipt': '上传付款凭证',
+    'loan.uploadLimit': '最大 5MB，支持 JPG/PNG',
+    'loan.awaitingAdminReview': '提交后等待管理员审核',
+    'loan.earlyRepaymentReduceInterest': '提前还款可减少利息',
+    'loan.confirmSubmit': '确认提交',
+
     // Account Page
     'account.totalAssets': '账户总资产',
     'account.floatingPnL': '浮动盈亏',
