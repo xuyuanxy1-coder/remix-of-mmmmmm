@@ -1,34 +1,37 @@
 import { ArrowRight, TrendingUp, Coins, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const features = [
-  {
-    icon: TrendingUp,
-    badge: 'Lowest transactions fees < 0.3%',
-    title: 'Trade all crypto in one place',
-    description: 'BTC, ETH, SOL, XRP, and 350+ cryptocurrencies',
-    color: 'bg-blue-500/10 text-blue-600',
-    link: '/trade/BTC',
-  },
-  {
-    icon: Coins,
-    badge: '7 days interest-free',
-    title: 'Cryptocurrency loans',
-    description: 'Borrow crypto with low interest. Max 15 days loan period.',
-    color: 'bg-green-500/10 text-green-600',
-    link: '/loan',
-  },
-  {
-    icon: Zap,
-    badge: 'Simple and stable',
-    title: 'Smart trading',
-    description: 'One click to create your earning plan',
-    color: 'bg-primary/10 text-primary',
-    link: '/trade/BTC',
-  },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const FeaturesSection = () => {
+  const { t } = useLanguage();
+
+  const features = [
+    {
+      icon: TrendingUp,
+      badge: t('features.lowestFees'),
+      title: t('features.tradeAllCrypto'),
+      description: t('features.cryptoList'),
+      color: 'bg-blue-500/10 text-blue-600',
+      link: '/trade/BTC',
+    },
+    {
+      icon: Coins,
+      badge: t('features.interestFree'),
+      title: t('features.cryptoLoans'),
+      description: t('features.loanDescription'),
+      color: 'bg-green-500/10 text-green-600',
+      link: '/loan',
+    },
+    {
+      icon: Zap,
+      badge: t('features.simpleStable'),
+      title: t('features.smartTrading'),
+      description: t('features.smartTradingDesc'),
+      color: 'bg-primary/10 text-primary',
+      link: '/trade/BTC',
+    },
+  ];
+
   return (
     <section className="py-16 lg:py-24">
       <div className="container mx-auto px-4 lg:px-8">
@@ -53,7 +56,7 @@ const FeaturesSection = () => {
                 to={feature.link}
                 className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:gap-2 transition-all duration-200"
               >
-                Get started
+                {t('common.getStarted')}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
