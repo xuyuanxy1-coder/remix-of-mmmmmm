@@ -62,13 +62,13 @@ const AdminUserList = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      // Get profiles with search filter
+      // Get profiles with search filter - also search by user_id for new users
       let query = supabase
         .from('profiles')
         .select('*', { count: 'exact' });
 
       if (search) {
-        query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%`);
+        query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%,user_id.ilike.%${search}%`);
       }
 
       const from = (page - 1) * pageSize;
@@ -83,17 +83,24 @@ const AdminUserList = () => {
       // Get assets for each user
       const userIds = profiles?.map(p => p.user_id) || [];
       
-      const { data: assets } = await supabase
-        .from('assets')
-        .select('*')
-        .in('user_id', userIds)
-        .eq('currency', 'USDT');
+      let assets: any[] = [];
+      let kycRecords: any[] = [];
+      
+      if (userIds.length > 0) {
+        const { data: assetsData } = await supabase
+          .from('assets')
+          .select('*')
+          .in('user_id', userIds)
+          .eq('currency', 'USDT');
+        assets = assetsData || [];
 
-      // Get KYC status for each user
-      const { data: kycRecords } = await supabase
-        .from('kyc_records')
-        .select('user_id, status')
-        .in('user_id', userIds);
+        // Get KYC status for each user
+        const { data: kycData } = await supabase
+          .from('kyc_records')
+          .select('user_id, status')
+          .in('user_id', userIds);
+        kycRecords = kycData || [];
+      }
 
       // Combine data
       const usersWithDetails: UserWithDetails[] = (profiles || []).map(profile => {

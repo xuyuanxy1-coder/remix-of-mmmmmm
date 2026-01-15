@@ -265,21 +265,37 @@ const AdminApplications = () => {
           .eq('id', app.id);
       } else if (app.table_name === 'loans') {
         // Approve loan and add to user balance
-        const { data: asset } = await supabase
+        const currency = app.currency || 'USDT';
+        const loanAmount = app.amount || 0;
+        
+        // Check if asset record exists
+        const { data: asset, error: assetError } = await supabase
           .from('assets')
           .select('balance')
           .eq('user_id', app.user_id)
-          .eq('currency', app.currency || 'USDT')
+          .eq('currency', currency)
           .single();
 
-        const newBalance = (asset?.balance || 0) + (app.amount || 0);
-        
-        await supabase
-          .from('assets')
-          .update({ balance: newBalance })
-          .eq('user_id', app.user_id)
-          .eq('currency', app.currency || 'USDT');
+        if (assetError && assetError.code === 'PGRST116') {
+          // Asset record doesn't exist, create it with loan amount
+          await supabase
+            .from('assets')
+            .insert({
+              user_id: app.user_id,
+              currency,
+              balance: loanAmount,
+            });
+        } else {
+          // Asset exists, update balance
+          const newBalance = (asset?.balance || 0) + loanAmount;
+          await supabase
+            .from('assets')
+            .update({ balance: newBalance })
+            .eq('user_id', app.user_id)
+            .eq('currency', currency);
+        }
 
+        // Update loan status
         await supabase
           .from('loans')
           .update({ 
@@ -288,6 +304,10 @@ const AdminApplications = () => {
             due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
           })
           .eq('id', app.id);
+
+        toast.success(`贷款已批准，${loanAmount} ${currency} 已添加到用户余额`);
+        fetchApplications();
+        return;
       } else if (app.table_name === 'loan_repayments') {
         // Approve repayment - update repayment status
         await supabase
