@@ -5,16 +5,79 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileCheck, History, Settings, LogOut, Shield, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import AdminUserList from '@/components/admin/AdminUserList';
 import AdminApplications from '@/components/admin/AdminApplications';
 import AdminTransactions from '@/components/admin/AdminTransactions';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminSmartTrades from '@/components/admin/AdminSmartTrades';
 
+interface PendingCounts {
+  applications: number;
+  trades: number;
+}
+
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('users');
+  const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ applications: 0, trades: 0 });
+
+  // Fetch pending counts
+  useEffect(() => {
+    const fetchPendingCounts = async () => {
+      if (!isAdmin) return;
+
+      try {
+        // Count pending transactions (deposits + withdrawals)
+        const { count: txCount } = await supabase
+          .from('transactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending')
+          .in('type', ['deposit', 'withdraw']);
+
+        // Count pending loans
+        const { count: loanCount } = await supabase
+          .from('loans')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        // Count pending KYC
+        const { count: kycCount } = await supabase
+          .from('kyc_records')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        // Count pending loan repayments
+        const { count: repaymentCount } = await supabase
+          .from('loan_repayments')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        // Count pending trades (manual mode)
+        const { count: tradeCount } = await supabase
+          .from('transactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending')
+          .eq('type', 'trade');
+
+        const totalApplications = (txCount || 0) + (loanCount || 0) + (kycCount || 0) + (repaymentCount || 0);
+
+        setPendingCounts({
+          applications: totalApplications,
+          trades: tradeCount || 0,
+        });
+      } catch (error) {
+        console.error('Error fetching pending counts:', error);
+      }
+    };
+
+    fetchPendingCounts();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchPendingCounts, 30000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
 
   useEffect(() => {
     // Wait for auth to finish loading
@@ -38,6 +101,16 @@ const Admin = () => {
     await logout();
     navigate('/auth');
     toast.success('Logged out successfully');
+  };
+
+  // Badge component for notification dots
+  const NotificationBadge = ({ count }: { count: number }) => {
+    if (count === 0) return null;
+    return (
+      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+        {count > 99 ? '99+' : count}
+      </span>
+    );
   };
 
   if (authLoading) {
@@ -91,13 +164,15 @@ const Admin = () => {
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">用户管理</span>
             </TabsTrigger>
-            <TabsTrigger value="trades" className="gap-2 py-3 data-[state=active]:bg-background">
+            <TabsTrigger value="trades" className="gap-2 py-3 data-[state=active]:bg-background relative">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">交易控制</span>
+              <NotificationBadge count={pendingCounts.trades} />
             </TabsTrigger>
-            <TabsTrigger value="applications" className="gap-2 py-3 data-[state=active]:bg-background">
+            <TabsTrigger value="applications" className="gap-2 py-3 data-[state=active]:bg-background relative">
               <FileCheck className="w-4 h-4" />
               <span className="hidden sm:inline">申请审核</span>
+              <NotificationBadge count={pendingCounts.applications} />
             </TabsTrigger>
             <TabsTrigger value="transactions" className="gap-2 py-3 data-[state=active]:bg-background">
               <History className="w-4 h-4" />
