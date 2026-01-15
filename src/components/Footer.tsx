@@ -1,3 +1,4 @@
+import React, { forwardRef } from 'react';
 import { Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MetaMaskLogo from '@/components/MetaMaskLogo';
@@ -19,7 +20,7 @@ const languages = [
   { code: 'zh' as Language, label: '中文' },
 ];
 
-const Footer = () => {
+const Footer = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
   const { language, setLanguage, t } = useLanguage();
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -28,7 +29,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-foreground text-background py-16 lg:py-20">
+    <footer ref={ref} {...props} className="bg-foreground text-background py-16 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Logo & Description */}
@@ -205,6 +206,8 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = 'Footer';
 
 export default Footer;

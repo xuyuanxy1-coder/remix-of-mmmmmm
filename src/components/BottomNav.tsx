@@ -1,9 +1,10 @@
+import React, { forwardRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, BarChart3, TrendingUp, Landmark, User, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const BottomNav = () => {
+const BottomNav = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { t } = useLanguage();
@@ -31,7 +32,7 @@ const BottomNav = () => {
     : navItems;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+    <nav ref={ref} {...props} className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16">
         {items.map((item) => {
           const Icon = item.icon;
@@ -53,6 +54,8 @@ const BottomNav = () => {
       </div>
     </nav>
   );
-};
+});
+
+BottomNav.displayName = 'BottomNav';
 
 export default BottomNav;

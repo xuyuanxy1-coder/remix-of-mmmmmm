@@ -226,6 +226,17 @@ const Account = () => {
     try {
       const fee = amount * WITHDRAW_FEE_RATE;
       
+      // Deduct balance immediately to prevent double-spending
+      const { error: balanceError } = await supabase
+        .from('assets')
+        .update({ balance: usdtBalance - amount })
+        .eq('user_id', user.id)
+        .eq('currency', 'USDT');
+
+      if (balanceError) {
+        throw new Error('Failed to update balance');
+      }
+      
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
         type: 'withdraw',
@@ -238,12 +249,30 @@ const Account = () => {
         note: `Withdraw ${amount} USDT to ${withdrawAddress} via ${selectedNetwork}`,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Rollback balance if transaction insert fails
+        await supabase
+          .from('assets')
+          .update({ balance: usdtBalance })
+          .eq('user_id', user.id)
+          .eq('currency', 'USDT');
+        throw error;
+      }
       
       const receiveAmount = amount - fee;
       toast.success(`Withdrawal request submitted. Amount: ${amount} USDT, Fee: ${fee.toFixed(2)} USDT, You will receive: ${receiveAmount.toFixed(2)} USDT`);
       setWithdrawAmount('');
       setWithdrawAddress('');
+      
+      // Refresh withdrawal history
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('type', 'withdraw')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      setWithdrawHistory(data || []);
     } catch (error: any) {
       console.error('Withdrawal error:', error);
       toast.error(error.message || 'Withdrawal request failed');
