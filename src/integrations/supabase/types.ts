@@ -206,6 +206,8 @@ export type Database = {
           email: string | null
           id: string
           is_frozen: boolean | null
+          last_login_at: string | null
+          last_login_ip: string | null
           phone: string | null
           updated_at: string
           user_id: string
@@ -218,6 +220,8 @@ export type Database = {
           email?: string | null
           id?: string
           is_frozen?: boolean | null
+          last_login_at?: string | null
+          last_login_ip?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -230,6 +234,8 @@ export type Database = {
           email?: string | null
           id?: string
           is_frozen?: boolean | null
+          last_login_at?: string | null
+          last_login_ip?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string

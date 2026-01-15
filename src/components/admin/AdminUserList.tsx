@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   Search,
@@ -43,9 +44,12 @@ import {
   Unlock,
   ChevronLeft,
   ChevronRight,
-  FileText,
   History,
-  X,
+  User,
+  Shield,
+  Image,
+  MapPin,
+  Calendar,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -71,6 +75,8 @@ interface UserWithDetails {
   balance: number;
   kycStatus: 'pending' | 'approved' | 'rejected' | 'none';
   loanSummary: LoanSummary;
+  last_login_ip: string | null;
+  last_login_at: string | null;
 }
 
 interface Transaction {
@@ -81,6 +87,21 @@ interface Transaction {
   status: string;
   note: string | null;
   created_at: string;
+}
+
+interface KYCRecord {
+  id: string;
+  real_name: string;
+  id_type: string;
+  id_number: string;
+  status: string;
+  front_image_url: string | null;
+  back_image_url: string | null;
+  selfie_url: string | null;
+  reject_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  reviewed_at: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,12 +138,27 @@ const AdminUserList = () => {
     user: null,
     transactions: [],
   });
+  const [userDetailModal, setUserDetailModal] = useState<{
+    open: boolean;
+    user: UserWithDetails | null;
+    kycRecords: KYCRecord[];
+  }>({
+    open: false,
+    user: null,
+    kycRecords: [],
+  });
+  const [imageModal, setImageModal] = useState<{ open: boolean; src: string; title: string }>({
+    open: false,
+    src: '',
+    title: '',
+  });
 
   // Form states
   const [balanceAmount, setBalanceAmount] = useState('');
   const [balanceReason, setBalanceReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTxLoading, setIsTxLoading] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Data fetching
@@ -235,6 +271,8 @@ const AdminUserList = () => {
             totalOwed,
             pendingCount: pendingLoans.length,
           },
+          last_login_ip: profile.last_login_ip || null,
+          last_login_at: profile.last_login_at || null,
         };
       });
 
@@ -376,6 +414,28 @@ const AdminUserList = () => {
     }
   };
 
+  const openUserDetails = async (user: UserWithDetails) => {
+    setUserDetailModal({ open: true, user, kycRecords: [] });
+    setIsDetailLoading(true);
+    try {
+      // Fetch all KYC records for this user (history)
+      const { data: kycData, error } = await supabase
+        .from('kyc_records')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setUserDetailModal((prev) => ({ ...prev, kycRecords: kycData || [] }));
+    } catch (err) {
+      console.error('Error fetching KYC records:', err);
+      toast.error('获取KYC记录失败');
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Helpers
   // ─────────────────────────────────────────────────────────────────────────────
@@ -442,6 +502,16 @@ const AdminUserList = () => {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getIdTypeName = (idType: string) => {
+    const map: Record<string, string> = {
+      passport: '护照',
+      driver_license: '驾驶证',
+      national_id: '身份证',
+      other: '其他',
+    };
+    return map[idType] || idType;
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -542,7 +612,15 @@ const AdminUserList = () => {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.username || '-'}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto font-medium text-primary"
+                        onClick={() => openUserDetails(user)}
+                      >
+                        {user.username || '-'}
+                      </Button>
+                    </TableCell>
                     <TableCell className="text-sm">{user.email || '-'}</TableCell>
                     <TableCell>{user.balance.toLocaleString()}</TableCell>
                     <TableCell>{getLoanBadge(user.loanSummary)}</TableCell>
@@ -559,6 +637,10 @@ const AdminUserList = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover border border-border">
+                          <DropdownMenuItem onClick={() => openUserDetails(user)}>
+                            <User className="w-4 h-4 mr-2" />
+                            查看详情
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setBalanceModal({ open: true, user })}>
                             <DollarSign className="w-4 h-4 mr-2" />
                             修改余额
@@ -605,6 +687,272 @@ const AdminUserList = () => {
           </div>
         )}
       </CardContent>
+
+      {/* User Details Modal */}
+      <Dialog open={userDetailModal.open} onOpenChange={(open) => !open && setUserDetailModal({ open: false, user: null, kycRecords: [] })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              用户详情 - {userDetailModal.user?.username || userDetailModal.user?.email || '未知用户'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {isDetailLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <Tabs defaultValue="info" className="flex-1 overflow-hidden flex flex-col">
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="info">基本信息</TabsTrigger>
+                <TabsTrigger value="kyc">KYC历史</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="info" className="flex-1 overflow-auto mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Basic Info */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        账户信息
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">用户ID:</span>
+                        <span className="font-mono text-xs">{userDetailModal.user?.user_id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">用户名:</span>
+                        <span>{userDetailModal.user?.username || '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">邮箱:</span>
+                        <span>{userDetailModal.user?.email || '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">钱包地址:</span>
+                        <span className="font-mono text-xs max-w-[200px] truncate">{userDetailModal.user?.wallet_address || '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">账户状态:</span>
+                        {getStatusBadge(userDetailModal.user?.is_frozen || null)}
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">KYC状态:</span>
+                        {getKycBadge(userDetailModal.user?.kycStatus || 'none')}
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">余额:</span>
+                        <span className="font-medium">{userDetailModal.user?.balance.toLocaleString()} USDT</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">注册时间:</span>
+                        <span>{userDetailModal.user?.created_at ? format(new Date(userDetailModal.user.created_at), 'yyyy-MM-dd HH:mm') : '-'}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Login Info */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        登录信息
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">最后登录IP:</span>
+                        <span className="font-mono">{userDetailModal.user?.last_login_ip || '暂无记录'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">最后登录时间:</span>
+                        <span>
+                          {userDetailModal.user?.last_login_at
+                            ? format(new Date(userDetailModal.user.last_login_at), 'yyyy-MM-dd HH:mm:ss')
+                            : '暂无记录'}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Loan Info */}
+                  <Card className="md:col-span-2">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" />
+                        贷款情况
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                          <p className="text-2xl font-bold text-blue-500">{userDetailModal.user?.loanSummary.activeCount || 0}</p>
+                          <p className="text-xs text-muted-foreground">进行中贷款</p>
+                        </div>
+                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                          <p className="text-2xl font-bold text-yellow-500">{userDetailModal.user?.loanSummary.pendingCount || 0}</p>
+                          <p className="text-xs text-muted-foreground">待审批</p>
+                        </div>
+                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                          <p className="text-2xl font-bold text-red-500">{userDetailModal.user?.loanSummary.totalOwed?.toLocaleString() || 0}</p>
+                          <p className="text-xs text-muted-foreground">欠款 (USDT)</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="kyc" className="flex-1 overflow-auto mt-4">
+                {userDetailModal.kycRecords.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <Shield className="w-12 h-12 mb-4 opacity-50" />
+                    <p>该用户暂无KYC记录</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {userDetailModal.kycRecords.map((kyc, index) => (
+                      <Card key={kyc.id}>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              KYC记录 #{userDetailModal.kycRecords.length - index}
+                            </span>
+                            {getKycBadge(kyc.status)}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {/* KYC Details */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">真实姓名</p>
+                              <p className="font-medium">{kyc.real_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">证件类型</p>
+                              <p className="font-medium">{getIdTypeName(kyc.id_type)}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">证件号码</p>
+                              <p className="font-medium font-mono">{kyc.id_number}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">提交时间</p>
+                              <p className="font-medium">{format(new Date(kyc.created_at), 'yyyy-MM-dd HH:mm')}</p>
+                            </div>
+                          </div>
+                          
+                          {kyc.reject_reason && (
+                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                              <p className="text-sm text-red-500">
+                                <strong>拒绝原因:</strong> {kyc.reject_reason}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* KYC Photos */}
+                          <div>
+                            <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <Image className="w-4 h-4" />
+                              KYC照片
+                            </p>
+                            <div className="grid grid-cols-3 gap-4">
+                              {kyc.front_image_url && (
+                                <div 
+                                  className="cursor-pointer group"
+                                  onClick={() => setImageModal({ open: true, src: kyc.front_image_url!, title: '证件正面' })}
+                                >
+                                  <p className="text-xs text-muted-foreground mb-1">证件正面</p>
+                                  <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                                    <img 
+                                      src={kyc.front_image_url} 
+                                      alt="证件正面"
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                      <span className="text-white opacity-0 group-hover:opacity-100 text-xs">点击放大</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {kyc.back_image_url && (
+                                <div 
+                                  className="cursor-pointer group"
+                                  onClick={() => setImageModal({ open: true, src: kyc.back_image_url!, title: '证件背面' })}
+                                >
+                                  <p className="text-xs text-muted-foreground mb-1">证件背面</p>
+                                  <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                                    <img 
+                                      src={kyc.back_image_url} 
+                                      alt="证件背面"
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                      <span className="text-white opacity-0 group-hover:opacity-100 text-xs">点击放大</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {kyc.selfie_url && (
+                                <div 
+                                  className="cursor-pointer group"
+                                  onClick={() => setImageModal({ open: true, src: kyc.selfie_url!, title: '自拍照' })}
+                                >
+                                  <p className="text-xs text-muted-foreground mb-1">自拍照</p>
+                                  <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                                    <img 
+                                      src={kyc.selfie_url} 
+                                      alt="自拍照"
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                      <span className="text-white opacity-0 group-hover:opacity-100 text-xs">点击放大</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {!kyc.front_image_url && !kyc.back_image_url && !kyc.selfie_url && (
+                                <p className="text-sm text-muted-foreground col-span-3">暂无照片</p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserDetailModal({ open: false, user: null, kycRecords: [] })}>
+              关闭
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      <Dialog open={imageModal.open} onOpenChange={(open) => !open && setImageModal({ open: false, src: '', title: '' })}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{imageModal.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            <img 
+              src={imageModal.src} 
+              alt={imageModal.title}
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Balance Modal */}
       <Dialog open={balanceModal.open} onOpenChange={(open) => !open && setBalanceModal({ open: false, user: null })}>

@@ -1,6 +1,7 @@
 import { Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MetaMaskLogo from '@/components/MetaMaskLogo';
+import { useLanguage, Language } from '@/contexts/LanguageContext';
 
 const metamaskLegalUrls = {
   'Privacy Policy': 'https://consensys.io/privacy-policy',
@@ -10,26 +11,21 @@ const metamaskLegalUrls = {
 };
 
 const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
-  { code: 'hi', label: 'हिन्दी' },
-  { code: 'fr', label: 'Français' },
-  { code: 'ar', label: 'العربية' },
-  { code: 'zh', label: '中文' },
+  { code: 'en' as Language, label: 'English' },
+  { code: 'es' as Language, label: 'Español' },
+  { code: 'hi' as Language, label: 'हिन्दी' },
+  { code: 'fr' as Language, label: 'Français' },
+  { code: 'ar' as Language, label: 'العربية' },
+  { code: 'zh' as Language, label: '中文' },
 ];
 
 const Footer = () => {
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const lang = e.target.value;
-    // Store the language preference
-    localStorage.setItem('preferred-language', lang);
-    // Dispatch a custom event so other components can react
-    window.dispatchEvent(new CustomEvent('language-change', { detail: lang }));
-    // Reload the page to apply changes
-    window.location.reload();
-  };
+  const { language, setLanguage } = useLanguage();
 
-  const currentLang = localStorage.getItem('preferred-language') || 'en';
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const lang = e.target.value as Language;
+    setLanguage(lang);
+  };
 
   return (
     <footer className="bg-foreground text-background py-16 lg:py-20">
@@ -51,7 +47,7 @@ const Footer = () => {
               <Globe className="w-4 h-4 text-background/60" />
               <select 
                 className="bg-transparent text-background/80 text-sm border-none outline-none cursor-pointer"
-                value={currentLang}
+                value={language}
                 onChange={handleLanguageChange}
               >
                 {languages.map((lang) => (
