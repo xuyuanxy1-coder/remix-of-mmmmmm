@@ -12,6 +12,7 @@ export interface Loan {
   interestRate: number;
   termDays: number;
   dueDate?: Date;
+  totalRepaid: number; // Track total approved repayments
 }
 
 interface LoanContextType {
@@ -48,6 +49,7 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
     try {
+      // Fetch loans
       const { data, error } = await supabase
         .from('loans')
         .select('*')
@@ -60,6 +62,20 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
+        // Fetch all approved repayments for these loans
+        const loanIds = data.map(l => l.id);
+        const { data: repayments } = await supabase
+          .from('loan_repayments')
+          .select('loan_id, amount')
+          .in('loan_id', loanIds)
+          .eq('status', 'approved');
+
+        // Calculate total repaid per loan
+        const repaidByLoan: Record<string, number> = {};
+        repayments?.forEach(r => {
+          repaidByLoan[r.loan_id] = (repaidByLoan[r.loan_id] || 0) + Number(r.amount);
+        });
+
         setLoans(data.map(l => ({
           id: l.id,
           amount: Number(l.amount),
@@ -70,6 +86,7 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
           interestRate: Number(l.interest_rate),
           termDays: l.term_days,
           dueDate: l.due_date ? new Date(l.due_date) : undefined,
+          totalRepaid: repaidByLoan[l.id] || 0,
         })));
       }
     } catch (error) {
@@ -88,25 +105,56 @@ export const LoanProvider = ({ children }: { children: ReactNode }) => {
     const borrowDate = new Date(loan.borrowDate);
     const daysElapsed = Math.floor((now.getTime() - borrowDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    const principal = loan.amount;
+    const originalPrincipal = loan.amount;
     let interest = 0;
     let penalty = 0;
 
     if (daysElapsed > 15) {
       // Over 15 days: interest for days 8-15 + penalty for days after 15
-      interest = principal * 0.01 * (15 - 7); // Days 8-15 at 1% per day
-      penalty = principal * 0.02 * (daysElapsed - 15); // After day 15 at 2% per day
+      interest = originalPrincipal * 0.01 * (15 - 7); // Days 8-15 at 1% per day
+      penalty = originalPrincipal * 0.02 * (daysElapsed - 15); // After day 15 at 2% per day
     } else if (daysElapsed > 7) {
       // 8-15 days: 1% per day interest
-      interest = principal * 0.01 * (daysElapsed - 7);
+      interest = originalPrincipal * 0.01 * (daysElapsed - 7);
     }
     // First 7 days: no interest
 
+    // Calculate total owed before any repayments
+    const totalOwedBeforeRepayment = originalPrincipal + interest + penalty;
+    
+    // Apply repayments: priority is penalty -> interest -> principal
+    let remainingRepaid = loan.totalRepaid || 0;
+    
+    let remainingPenalty = penalty;
+    let remainingInterest = interest;
+    let remainingPrincipal = originalPrincipal;
+
+    // First, apply to penalty
+    if (remainingRepaid > 0 && remainingPenalty > 0) {
+      const penaltyPayment = Math.min(remainingRepaid, remainingPenalty);
+      remainingPenalty -= penaltyPayment;
+      remainingRepaid -= penaltyPayment;
+    }
+
+    // Then, apply to interest
+    if (remainingRepaid > 0 && remainingInterest > 0) {
+      const interestPayment = Math.min(remainingRepaid, remainingInterest);
+      remainingInterest -= interestPayment;
+      remainingRepaid -= interestPayment;
+    }
+
+    // Finally, apply to principal
+    if (remainingRepaid > 0 && remainingPrincipal > 0) {
+      const principalPayment = Math.min(remainingRepaid, remainingPrincipal);
+      remainingPrincipal -= principalPayment;
+      remainingRepaid -= principalPayment;
+    }
+
     return {
-      principal,
-      interest,
-      penalty,
-      total: principal + interest + penalty,
+      principal: Math.max(0, remainingPrincipal),
+      interest: Math.max(0, remainingInterest),
+      penalty: Math.max(0, remainingPenalty),
+      total: Math.max(0, remainingPrincipal + remainingInterest + remainingPenalty),
       daysElapsed,
     };
   };

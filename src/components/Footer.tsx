@@ -1,18 +1,36 @@
 import { Globe } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import MetaMaskLogo from '@/components/MetaMaskLogo';
 
-const footerLinks = {
-  Products: ['Spot Trading', 'Margin Trading', 'Derivatives', 'Loans'],
-  Services: ['Smart Trading', 'Copy Trading', 'API', 'Mobile App'],
-  Support: ['Help Center', 'Contact Us', 'FAQ', 'Fees'],
-  Legal: ['Privacy Policy', 'Terms of Service', 'Cookies Policy', 'Risk Disclosure'],
+const metamaskLegalUrls = {
+  'Privacy Policy': 'https://consensys.io/privacy-policy',
+  'Terms of Service': 'https://consensys.io/terms-of-use',
+  'Cookies Policy': 'https://consensys.io/privacy-policy#cookies',
+  'Risk Disclosure': 'https://metamask.io/risk-warning/',
 };
 
 const languages = [
-  'English', '中文', '日本語', 'Español', 'Français', 'Deutsch', 'Português', 'Русский'
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'hi', label: 'हिन्दी' },
+  { code: 'fr', label: 'Français' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'zh', label: '中文' },
 ];
 
 const Footer = () => {
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const lang = e.target.value;
+    // Store the language preference
+    localStorage.setItem('preferred-language', lang);
+    // Dispatch a custom event so other components can react
+    window.dispatchEvent(new CustomEvent('language-change', { detail: lang }));
+    // Reload the page to apply changes
+    window.location.reload();
+  };
+
+  const currentLang = localStorage.getItem('preferred-language') || 'en';
+
   return (
     <footer className="bg-foreground text-background py-16 lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
@@ -31,34 +49,139 @@ const Footer = () => {
             {/* Language Selector */}
             <div className="flex items-center gap-2 text-sm">
               <Globe className="w-4 h-4 text-background/60" />
-              <select className="bg-transparent text-background/80 text-sm border-none outline-none cursor-pointer">
+              <select 
+                className="bg-transparent text-background/80 text-sm border-none outline-none cursor-pointer"
+                value={currentLang}
+                onChange={handleLanguageChange}
+              >
                 {languages.map((lang) => (
-                  <option key={lang} value={lang} className="text-foreground">
-                    {lang}
+                  <option key={lang.code} value={lang.code} className="text-foreground">
+                    {lang.label}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Footer Links */}
-          {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
-              <h4 className="font-display font-semibold mb-4">{category}</h4>
-              <ul className="space-y-2">
-                {links.map((link) => (
-                  <li key={link}>
-                    <a 
-                      href="#" 
-                      className="text-background/60 text-sm hover:text-background transition-colors"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* Products */}
+          <div>
+            <h4 className="font-display font-semibold mb-4">Products</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Spot Trading
+                </Link>
+              </li>
+              <li>
+                <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Margin Trading
+                </Link>
+              </li>
+              <li>
+                <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Derivatives
+                </Link>
+              </li>
+              <li>
+                <Link to="/loan" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Loans
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Services */}
+          <div>
+            <h4 className="font-display font-semibold mb-4">Services</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Smart Trading
+                </Link>
+              </li>
+              <li>
+                <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Copy Trading
+                </Link>
+              </li>
+              <li>
+                <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
+                  API
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Mobile App
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div>
+            <h4 className="font-display font-semibold mb-4">Support</h4>
+            <ul className="space-y-2">
+              <li>
+                <a 
+                  href="#" 
+                  className="text-background/60 text-sm hover:text-background transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Trigger Tawk.to chat if available
+                    if ((window as any).Tawk_API?.maximize) {
+                      (window as any).Tawk_API.maximize();
+                    }
+                  }}
+                >
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="#" 
+                  className="text-background/60 text-sm hover:text-background transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Trigger Tawk.to chat if available
+                    if ((window as any).Tawk_API?.maximize) {
+                      (window as any).Tawk_API.maximize();
+                    }
+                  }}
+                >
+                  Contact Us
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
+                  FAQ
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
+                  Fees
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h4 className="font-display font-semibold mb-4">Legal</h4>
+            <ul className="space-y-2">
+              {Object.entries(metamaskLegalUrls).map(([label, url]) => (
+                <li key={label}>
+                  <a 
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-background/60 text-sm hover:text-background transition-colors"
+                  >
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* Bottom Bar */}
