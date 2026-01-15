@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import BottomNav from '@/components/BottomNav';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Mock additional market data (in real app, this would come from API)
 const MOCK_MARKET_DATA: Record<string, { marketCap: number; volume24h: number; circulatingSupply: number; maxSupply: number | null }> = {
@@ -39,20 +40,13 @@ const formatNumber = (num: number, decimals = 2): string => {
   return `$${num.toFixed(decimals)}`;
 };
 
-const formatSupply = (num: number): string => {
-  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
-  return num.toFixed(0);
-};
-
 const Market = () => {
   const { getAllPrices, isLoading, isDelayed, refresh } = useCryptoPrices();
   const [searchQuery, setSearchQuery] = useState('');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('marketCap');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const { t } = useLanguage();
 
   const prices = getAllPrices();
 
@@ -138,10 +132,10 @@ const Market = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-display text-3xl lg:text-4xl font-bold mb-2">
-              Cryptocurrency Prices by Market Cap
+              {t('market.title')}
             </h1>
             <p className="text-muted-foreground">
-              The global cryptocurrency market cap today is {formatNumber(2.45e12)}, with a 24-hour trading volume of {formatNumber(98.5e9)}.
+              {t('market.description')} {formatNumber(2.45e12)}，{t('market.with24hVolume')} {formatNumber(98.5e9)}。
             </p>
           </div>
 
@@ -151,7 +145,7 @@ const Market = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search cryptocurrency..."
+                placeholder={t('market.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -161,7 +155,7 @@ const Market = () => {
               {isDelayed && (
                 <span className="inline-flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full">
                   <AlertTriangle className="w-3 h-3" />
-                  Data delayed
+                  {t('common.dataDelayed')}
                 </span>
               )}
               <Button
@@ -171,7 +165,7 @@ const Market = () => {
                 className="gap-2"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
+                {t('common.refresh')}
               </Button>
             </div>
           </div>
@@ -179,19 +173,19 @@ const Market = () => {
           {/* Market Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-sm text-muted-foreground mb-1">Total Coins</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('market.totalCoins')}</p>
               <p className="text-xl font-bold">{prices.length}</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-sm text-muted-foreground mb-1">Active Markets</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('market.activeMarkets')}</p>
               <p className="text-xl font-bold">24</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-sm text-muted-foreground mb-1">BTC Dominance</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('market.btcDominance')}</p>
               <p className="text-xl font-bold">52.4%</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-sm text-muted-foreground mb-1">ETH Dominance</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('market.ethDominance')}</p>
               <p className="text-xl font-bold">17.2%</p>
             </div>
           </div>
@@ -210,40 +204,40 @@ const Market = () => {
                 onClick={() => handleSort('name')}
                 className="col-span-2 flex items-center gap-1 hover:text-foreground transition-colors"
               >
-                Coin <SortIcon field="name" />
+                {t('market.coin')} <SortIcon field="name" />
               </button>
               <button 
                 onClick={() => handleSort('price')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                Price <SortIcon field="price" />
+                {t('market.price')} <SortIcon field="price" />
               </button>
               <button 
                 onClick={() => handleSort('change24h')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                24h % <SortIcon field="change24h" />
+                {t('market.change24h')} <SortIcon field="change24h" />
               </button>
               <button 
                 onClick={() => handleSort('marketCap')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                Market Cap <SortIcon field="marketCap" />
+                {t('market.marketCap')} <SortIcon field="marketCap" />
               </button>
               <button 
                 onClick={() => handleSort('volume24h')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                Volume (24h) <SortIcon field="volume24h" />
+                {t('market.volume24h')} <SortIcon field="volume24h" />
               </button>
-              <div className="text-center">Trade</div>
+              <div className="text-center">{t('nav.trade')}</div>
             </div>
 
             {/* Table Header - Mobile */}
             <div className="lg:hidden grid grid-cols-4 gap-2 py-3 px-4 border-b border-border bg-muted/50 text-xs font-medium text-muted-foreground">
-              <div className="col-span-2">Coin</div>
-              <div className="text-right">Price</div>
-              <div className="text-right">24h %</div>
+              <div className="col-span-2">{t('market.coin')}</div>
+              <div className="text-right">{t('market.price')}</div>
+              <div className="text-right">{t('market.change24h')}</div>
             </div>
 
             {/* Table Body */}
@@ -253,12 +247,12 @@ const Market = () => {
                   {isLoading ? (
                     <div className="flex flex-col items-center gap-2">
                       <RefreshCw className="w-6 h-6 animate-spin" />
-                      <p>Loading market data...</p>
+                      <p>{t('market.loadingData')}</p>
                     </div>
                   ) : searchQuery ? (
-                    <p>No results found for "{searchQuery}"</p>
+                    <p>{t('market.noResults')} "{searchQuery}"</p>
                   ) : (
-                    <p>No market data available</p>
+                    <p>{t('market.noData')}</p>
                   )}
                 </div>
               ) : (
@@ -321,7 +315,7 @@ const Market = () => {
                       <div className="text-center">
                         <Link to={`/trade/${item.symbol}`}>
                           <Button size="sm" className="h-8 px-4">
-                            Trade
+                            {t('nav.trade')}
                           </Button>
                         </Link>
                       </div>
@@ -362,7 +356,7 @@ const Market = () => {
 
           {/* Footer Info */}
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Data updates every 15 seconds via CoinGecko API</p>
+            <p>{t('market.dataUpdates')}</p>
           </div>
         </div>
       </main>

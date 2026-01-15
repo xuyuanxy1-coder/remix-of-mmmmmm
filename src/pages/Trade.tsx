@@ -15,11 +15,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useCryptoPrices } from '@/hooks/useCryptoPrices';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const TradePage = () => {
   const { symbol = 'BTC' } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
   const { getPrice, getAllPrices, isDelayed } = useCryptoPrices();
+  const { t } = useLanguage();
   
   const upperSymbol = symbol.toUpperCase();
   const crypto = getPrice(upperSymbol);
@@ -42,9 +44,9 @@ const TradePage = () => {
         <div className="container mx-auto px-4 lg:px-8">
           {/* Header */}
           <div className="mb-6">
-            <Link to="/#market" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
+            <Link to="/market" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
               <ArrowLeft className="w-4 h-4" />
-              Back to Market
+              {t('nav.backToMarket')}
             </Link>
             
             <div className="flex items-center gap-4">
@@ -99,7 +101,7 @@ const TradePage = () => {
                   {isDelayed && (
                     <span className="inline-flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full">
                       <AlertTriangle className="w-3 h-3" />
-                      Data delayed
+                      {t('common.dataDelayed')}
                     </span>
                   )}
                 </div>
@@ -112,7 +114,7 @@ const TradePage = () => {
             {/* Chart */}
             <div className="lg:col-span-2">
               <div className="bg-card border border-border rounded-xl p-4">
-                <h2 className="font-semibold mb-4">{upperSymbol}/USDT Chart</h2>
+                <h2 className="font-semibold mb-4">{upperSymbol}/USDT {t('trade.chart')}</h2>
                 <KlineChart symbol={upperSymbol} />
               </div>
             </div>

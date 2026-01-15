@@ -1,10 +1,14 @@
-const stats = [
-  { value: '$3.8 B', label: '24h trading volume' },
-  { value: '350+', label: 'Cryptocurrencies' },
-  { value: '1.2 M', label: 'Registered users' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const StatsSection = () => {
+  const { t } = useLanguage();
+
+  const stats = [
+    { value: '$3.8 B', label: t('stats.tradingVolume') },
+    { value: '350+', label: t('stats.cryptocurrencies') },
+    { value: '1.2 M', label: t('stats.registeredUsers') },
+  ];
+
   return (
     <section className="py-16 lg:py-20 border-y border-border bg-muted/30">
       <div className="container mx-auto px-4 lg:px-8">
