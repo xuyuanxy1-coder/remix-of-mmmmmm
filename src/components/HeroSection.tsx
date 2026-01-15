@@ -1,8 +1,11 @@
 import { Apple, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import phoneMockup from '@/assets/phone-mockup.png';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const HeroSection = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="pt-24 lg:pt-32 pb-16 lg:pb-24 overflow-hidden">
       <div className="container mx-auto px-4 lg:px-8">
@@ -10,30 +13,30 @@ const HeroSection = () => {
           {/* Left Content */}
           <div className="space-y-8 animate-fade-in-up">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold leading-tight">
-              Buy, trade, and hold 350+ cryptocurrencies on MetaMask Trade
+              {t('hero.title')}
             </h1>
             
             <Button className="btn-primary inline-flex items-center gap-2 px-8 py-3 text-base">
               <Apple className="w-5 h-5" />
-              App Store
+              {t('hero.appStore')}
             </Button>
 
             <div className="grid md:grid-cols-2 gap-6 pt-6">
               <div className="hero-badge">
                 <Star className="w-4 h-4 text-primary fill-primary" />
                 <div>
-                  <p className="font-medium text-foreground">Application</p>
+                  <p className="font-medium text-foreground">{t('hero.application')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Mobile banking that throws out the role book and gives you a precision tool for managing your finances.
+                    {t('hero.appDescription')}
                   </p>
                 </div>
               </div>
               <div className="hero-badge">
                 <Star className="w-4 h-4 text-primary fill-primary" />
                 <div>
-                  <p className="font-medium text-foreground">Crypto deposit</p>
+                  <p className="font-medium text-foreground">{t('hero.cryptoDeposit')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    By using cryptocurrency for deposit, an additional layer of security is obtained.
+                    {t('hero.cryptoDescription')}
                   </p>
                 </div>
               </div>

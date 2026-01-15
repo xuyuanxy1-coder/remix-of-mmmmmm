@@ -20,7 +20,7 @@ const languages = [
 ];
 
 const Footer = () => {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const lang = e.target.value as Language;
@@ -38,8 +38,7 @@ const Footer = () => {
               <span className="font-display font-semibold text-lg">MetaMask Trade</span>
             </div>
             <p className="text-background/60 text-sm leading-relaxed mb-6">
-              The world's leading cryptocurrency exchange platform. 
-              Trade securely with the lowest fees and fastest execution.
+              {t('footer.description')}
             </p>
             
             {/* Language Selector */}
@@ -61,26 +60,26 @@ const Footer = () => {
 
           {/* Products */}
           <div>
-            <h4 className="font-display font-semibold mb-4">Products</h4>
+            <h4 className="font-display font-semibold mb-4">{t('footer.products')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Spot Trading
+                  {t('footer.spotTrading')}
                 </Link>
               </li>
               <li>
                 <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Margin Trading
+                  {t('footer.marginTrading')}
                 </Link>
               </li>
               <li>
                 <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Derivatives
+                  {t('footer.derivatives')}
                 </Link>
               </li>
               <li>
                 <Link to="/loan" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Loans
+                  {t('footer.loans')}
                 </Link>
               </li>
             </ul>
@@ -88,26 +87,26 @@ const Footer = () => {
 
           {/* Services */}
           <div>
-            <h4 className="font-display font-semibold mb-4">Services</h4>
+            <h4 className="font-display font-semibold mb-4">{t('footer.services')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Smart Trading
+                  {t('nav.smartTrading')}
                 </Link>
               </li>
               <li>
                 <Link to="/trade" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Copy Trading
+                  {t('footer.copyTrading')}
                 </Link>
               </li>
               <li>
                 <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
-                  API
+                  {t('footer.api')}
                 </a>
               </li>
               <li>
                 <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Mobile App
+                  {t('footer.mobileApp')}
                 </a>
               </li>
             </ul>
@@ -115,7 +114,7 @@ const Footer = () => {
 
           {/* Support */}
           <div>
-            <h4 className="font-display font-semibold mb-4">Support</h4>
+            <h4 className="font-display font-semibold mb-4">{t('footer.support')}</h4>
             <ul className="space-y-2">
               <li>
                 <a 
@@ -129,7 +128,7 @@ const Footer = () => {
                     }
                   }}
                 >
-                  Help Center
+                  {t('footer.helpCenter')}
                 </a>
               </li>
               <li>
@@ -144,17 +143,17 @@ const Footer = () => {
                     }
                   }}
                 >
-                  Contact Us
+                  {t('footer.contactUs')}
                 </a>
               </li>
               <li>
                 <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
-                  FAQ
+                  {t('footer.faq')}
                 </a>
               </li>
               <li>
                 <a href="#" className="text-background/60 text-sm hover:text-background transition-colors">
-                  Fees
+                  {t('footer.fees')}
                 </a>
               </li>
             </ul>
@@ -162,7 +161,7 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h4 className="font-display font-semibold mb-4">Legal</h4>
+            <h4 className="font-display font-semibold mb-4">{t('footer.legal')}</h4>
             <ul className="space-y-2">
               {Object.entries(metamaskLegalUrls).map(([label, url]) => (
                 <li key={label}>
@@ -183,7 +182,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-background/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-background/40 text-sm">
-            © 2024 MetaMask Trade. All rights reserved.
+            © 2024 MetaMask Trade. {t('footer.allRightsReserved')}
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-background/60 hover:text-background transition-colors">

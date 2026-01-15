@@ -1,18 +1,20 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, BarChart3, TrendingUp, Landmark, User, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-const navItems = [
-  { label: 'Home', href: '/', icon: Home },
-  { label: 'Market', href: '/market', icon: BarChart3 },
-  { label: 'Trade', href: '/trade/BTC', icon: TrendingUp },
-  { label: 'Loan', href: '/loan', icon: Landmark },
-  { label: 'Account', href: '/account', icon: User },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const BottomNav = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
+  const { t } = useLanguage();
+
+  const navItems = [
+    { label: t('nav.home'), href: '/', icon: Home },
+    { label: t('nav.market'), href: '/market', icon: BarChart3 },
+    { label: t('nav.trade'), href: '/trade/BTC', icon: TrendingUp },
+    { label: t('nav.loan'), href: '/loan', icon: Landmark },
+    { label: t('nav.account'), href: '/account', icon: User },
+  ];
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -25,7 +27,7 @@ const BottomNav = () => {
   };
 
   const items = isAdmin 
-    ? [...navItems.slice(0, 4), { label: 'Admin', href: '/admin', icon: Shield }]
+    ? [...navItems.slice(0, 4), { label: t('nav.admin'), href: '/admin', icon: Shield }]
     : navItems;
 
   return (
@@ -37,7 +39,7 @@ const BottomNav = () => {
           
           return (
             <Link
-              key={item.label}
+              key={item.href}
               to={item.href}
               className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors ${
                 active ? 'text-primary' : 'text-muted-foreground'

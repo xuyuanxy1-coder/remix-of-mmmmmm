@@ -7,19 +7,21 @@ import MetaMaskLogo from '@/components/MetaMaskLogo';
 import NotificationBell from '@/components/NotificationBell';
 import { useTawkTo } from '@/hooks/useTawkTo';
 import { useAuth } from '@/contexts/AuthContext';
-
-const navItems = [
-  { label: 'Home', href: '/' },
-  { label: 'Market', href: '/market' },
-  { label: 'Smart trading', href: '/trade/BTC' },
-  { label: 'Loan', href: '/loan' },
-  { label: 'Account', href: '/account' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toggleChat } = useTawkTo();
   const { isAdmin, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
+
+  const navItems = [
+    { label: t('nav.home'), href: '/' },
+    { label: t('nav.market'), href: '/market' },
+    { label: t('nav.smartTrading'), href: '/trade/BTC' },
+    { label: t('nav.loan'), href: '/loan' },
+    { label: t('nav.account'), href: '/account' },
+  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -55,30 +57,30 @@ const Navbar = () => {
               className="nav-link flex items-center gap-1 hover:text-primary transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
-              Customer Service
+              {t('nav.customerService')}
             </button>
             {isAdmin && (
               <Link to="/admin" className="nav-link flex items-center gap-1 text-primary">
                 <Shield className="w-4 h-4" />
-                Admin
+                {t('nav.admin')}
               </Link>
             )}
             {isAuthenticated ? (
               <Link to="/account">
                 <Button className="btn-primary">
-                  Account
+                  {t('nav.account')}
                 </Button>
               </Link>
             ) : (
               <>
                 <Link to="/auth">
                   <Button variant="outline" className="btn-outline border-foreground/20">
-                    Login
+                    {t('auth.login')}
                   </Button>
                 </Link>
                 <Link to="/auth">
                   <Button className="btn-primary">
-                    Sign up
+                    {t('auth.signUp')}
                   </Button>
                 </Link>
               </>
@@ -126,7 +128,7 @@ const Navbar = () => {
                 className="nav-link py-2 flex items-center gap-2 text-primary"
               >
                 <MessageCircle className="w-5 h-5" />
-                Customer Service
+                {t('nav.customerService')}
               </button>
               {isAdmin && (
                 <Link 
@@ -135,26 +137,26 @@ const Navbar = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Shield className="w-5 h-5" />
-                  Admin Panel
+                  {t('nav.adminPanel')}
                 </Link>
               )}
               <div className="flex gap-3 pt-4 border-t border-border">
                 {isAuthenticated ? (
                   <Link to="/account" className="flex-1">
                     <Button className="btn-primary w-full">
-                      Account
+                      {t('nav.account')}
                     </Button>
                   </Link>
                 ) : (
                   <>
                     <Link to="/auth" className="flex-1">
                       <Button variant="outline" className="btn-outline w-full">
-                        Login
+                        {t('auth.login')}
                       </Button>
                     </Link>
                     <Link to="/auth" className="flex-1">
                       <Button className="btn-primary w-full">
-                        Sign up
+                        {t('auth.signUp')}
                       </Button>
                     </Link>
                   </>
