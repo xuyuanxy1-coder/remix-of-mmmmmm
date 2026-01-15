@@ -50,6 +50,7 @@ import {
   Image,
   MapPin,
   Calendar,
+  Key,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -152,9 +153,15 @@ const AdminUserList = () => {
     src: '',
     title: '',
   });
+  const [passwordModal, setPasswordModal] = useState<{ open: boolean; user: UserWithDetails | null }>({
+    open: false,
+    user: null,
+  });
 
   // Form states
   const [balanceAmount, setBalanceAmount] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [balanceReason, setBalanceReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTxLoading, setIsTxLoading] = useState(false);
@@ -387,6 +394,56 @@ const AdminUserList = () => {
     } catch (error: any) {
       console.error('Error toggling freeze:', error);
       toast.error('操作失败');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (!passwordModal.user || !newPassword) return;
+
+    if (newPassword.length < 6) {
+      toast.error('密码长度至少6位');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('两次输入的密码不一致');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            userId: passwordModal.user.user_id,
+            newPassword: newPassword,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '修改密码失败');
+      }
+
+      toast.success('密码修改成功');
+      setPasswordModal({ open: false, user: null });
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      toast.error(error.message || '密码修改失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -661,6 +718,10 @@ const AdminUserList = () => {
                                 解冻账户
                               </>
                             )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setPasswordModal({ open: true, user })}>
+                            <Key className="w-4 h-4 mr-2" />
+                            修改密码
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1057,6 +1118,53 @@ const AdminUserList = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setTxModal({ open: false, user: null, transactions: [] })}>
               关闭
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Modal */}
+      <Dialog open={passwordModal.open} onOpenChange={(open) => {
+        if (!open) {
+          setPasswordModal({ open: false, user: null });
+          setNewPassword('');
+          setConfirmPassword('');
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>修改密码 - {passwordModal.user?.username || passwordModal.user?.email}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>新密码</Label>
+              <Input
+                type="password"
+                placeholder="请输入新密码（至少6位）"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>确认密码</Label>
+              <Input
+                type="password"
+                placeholder="请再次输入新密码"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setPasswordModal({ open: false, user: null });
+              setNewPassword('');
+              setConfirmPassword('');
+            }}>
+              取消
+            </Button>
+            <Button onClick={handlePasswordSubmit} disabled={isSubmitting || !newPassword || !confirmPassword}>
+              {isSubmitting ? '处理中...' : '确认修改'}
             </Button>
           </DialogFooter>
         </DialogContent>

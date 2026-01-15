@@ -13,8 +13,6 @@ import {
   Upload,
   ChevronRight,
   Wallet,
-  TrendingUp,
-  TrendingDown,
   UserCheck,
   FileText,
   CheckCircle2,
@@ -67,13 +65,6 @@ const RECHARGE_NETWORKS = [
   { id: 'TRC20-USDT', name: 'TRC20-USDT' },
   { id: 'ETH', name: 'ETH' },
 ];
-
-const MIN_DEPOSITS: Record<string, number> = {
-  BTC: 0.001,
-  ETH: 0.1,
-  USDT: 100,
-  USDC: 100,
-};
 
 const Account = () => {
   const [currentView, setCurrentView] = useState<AccountView>('overview');

@@ -42,24 +42,44 @@ const COIN_CONFIG: Record<string, { id: string; name: string; icon: string }> = 
 const COIN_IDS = Object.values(COIN_CONFIG).map(c => c.id).join(',');
 const REFRESH_INTERVAL = 15000; // 15 seconds
 
-// Fallback prices in case API fails
+// Fallback prices in case API fails (updated with recent values)
 const FALLBACK_PRICES: Record<string, number> = {
-  bitcoin: 92027.52,
-  ethereum: 3138.56,
-  binancecoin: 910.06,
-  solana: 141.83,
-  ripple: 2.18,
-  cardano: 0.68,
-  dogecoin: 0.32,
-  'avalanche-2': 35.42,
-  polkadot: 6.85,
-  'matic-network': 0.89,
-  chainlink: 13.28,
-  uniswap: 5.47,
-  'shiba-inu': 0.000022,
-  litecoin: 84.32,
-  cosmos: 8.76,
-  arbitrum: 0.21,
+  bitcoin: 105000,
+  ethereum: 3800,
+  binancecoin: 720,
+  solana: 180,
+  ripple: 2.5,
+  cardano: 0.95,
+  dogecoin: 0.38,
+  'avalanche-2': 42,
+  polkadot: 7.5,
+  'matic-network': 0.52,
+  chainlink: 15,
+  uniswap: 14,
+  'shiba-inu': 0.000024,
+  litecoin: 110,
+  cosmos: 7.2,
+  arbitrum: 0.85,
+};
+
+// Symbol mapping for Binance API
+const BINANCE_SYMBOL_MAP: Record<string, string> = {
+  bitcoin: 'BTCUSDT',
+  ethereum: 'ETHUSDT',
+  binancecoin: 'BNBUSDT',
+  solana: 'SOLUSDT',
+  ripple: 'XRPUSDT',
+  cardano: 'ADAUSDT',
+  dogecoin: 'DOGEUSDT',
+  'avalanche-2': 'AVAXUSDT',
+  polkadot: 'DOTUSDT',
+  'matic-network': 'MATICUSDT',
+  chainlink: 'LINKUSDT',
+  uniswap: 'UNIUSDT',
+  'shiba-inu': 'SHIBUSDT',
+  litecoin: 'LTCUSDT',
+  cosmos: 'ATOMUSDT',
+  arbitrum: 'ARBUSDT',
 };
 
 export const useCryptoPrices = () => {
@@ -75,16 +95,64 @@ export const useCryptoPrices = () => {
 
   const fetchPrices = useCallback(async () => {
     try {
-      // Call CoinGecko API directly
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${COIN_IDS}&vs_currencies=usd&include_24hr_change=true`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch prices');
+      let data: Record<string, { usd: number; usd_24h_change?: number }> = {};
+      let usedFallback = false;
+
+      // Try CoinGecko first
+      try {
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${COIN_IDS}&vs_currencies=usd&include_24hr_change=true`
+        );
+        
+        if (response.ok) {
+          data = await response.json();
+        } else {
+          throw new Error('CoinGecko API failed');
+        }
+      } catch (cgError) {
+        console.warn('CoinGecko API failed, trying Binance:', cgError);
+        
+        // Try Binance as backup
+        try {
+          const binanceResponse = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+          if (binanceResponse.ok) {
+            const binanceData = await binanceResponse.json();
+            const binancePrices: Record<string, { usd: number; usd_24h_change: number }> = {};
+            
+            Object.entries(COIN_CONFIG).forEach(([_, config]) => {
+              const binanceSymbol = BINANCE_SYMBOL_MAP[config.id];
+              if (binanceSymbol) {
+                const ticker = binanceData.find((t: any) => t.symbol === binanceSymbol);
+                if (ticker) {
+                  binancePrices[config.id] = {
+                    usd: parseFloat(ticker.lastPrice),
+                    usd_24h_change: parseFloat(ticker.priceChangePercent),
+                  };
+                }
+              }
+            });
+            
+            if (Object.keys(binancePrices).length > 0) {
+              data = binancePrices;
+            } else {
+              throw new Error('No Binance data found');
+            }
+          } else {
+            throw new Error('Binance API failed');
+          }
+        } catch (binanceError) {
+          console.warn('Binance API also failed, using fallback:', binanceError);
+          usedFallback = true;
+          // Use fallback data
+          Object.entries(COIN_CONFIG).forEach(([_, config]) => {
+            data[config.id] = {
+              usd: FALLBACK_PRICES[config.id] || 0,
+              usd_24h_change: 0,
+            };
+          });
+        }
       }
-      
-      const data = await response.json();
+
       lastSuccessfulFetchRef.current = Date.now();
 
       const newPrices: Record<string, CryptoPrice> = {};
