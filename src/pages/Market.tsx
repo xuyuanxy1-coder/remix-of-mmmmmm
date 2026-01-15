@@ -118,7 +118,8 @@ const Market = () => {
       return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
     });
 
-  const SortIcon = ({ field }: { field: SortField }) => {
+  // Render sort icon based on current sort state
+  const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
     return sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };
@@ -198,37 +199,37 @@ const Market = () => {
                 onClick={() => handleSort('rank')}
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
               >
-                # <SortIcon field="rank" />
+                # {renderSortIcon('rank')}
               </button>
               <button 
                 onClick={() => handleSort('name')}
                 className="col-span-2 flex items-center gap-1 hover:text-foreground transition-colors"
               >
-                {t('market.coin')} <SortIcon field="name" />
+                {t('market.coin')} {renderSortIcon('name')}
               </button>
               <button 
                 onClick={() => handleSort('price')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                {t('market.price')} <SortIcon field="price" />
+                {t('market.price')} {renderSortIcon('price')}
               </button>
               <button 
                 onClick={() => handleSort('change24h')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                {t('market.change24h')} <SortIcon field="change24h" />
+                {t('market.change24h')} {renderSortIcon('change24h')}
               </button>
               <button 
                 onClick={() => handleSort('marketCap')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                {t('market.marketCap')} <SortIcon field="marketCap" />
+                {t('market.marketCap')} {renderSortIcon('marketCap')}
               </button>
               <button 
                 onClick={() => handleSort('volume24h')}
                 className="col-span-2 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
               >
-                {t('market.volume24h')} <SortIcon field="volume24h" />
+                {t('market.volume24h')} {renderSortIcon('volume24h')}
               </button>
               <div className="text-center">{t('nav.trade')}</div>
             </div>
