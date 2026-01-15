@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import { useAssets } from '@/contexts/AssetsContext';
 import { useCryptoPrices } from '@/hooks/useCryptoPrices';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import {
   Select,
