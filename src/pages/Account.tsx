@@ -96,7 +96,7 @@ const Account = () => {
   const { assets, getBalance } = useAssets();
   const { getPrice } = useCryptoPrices();
   const { loans, calculateOwed, activeLoans } = useLoan();
-  const { kycData, submitKYC, isVerified } = useKYC();
+  const { kycData, submitPrimaryKYC, submitAdvancedKYC, isPrimaryVerified, isAdvancedVerified, isVerified } = useKYC();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const { creditScore, canWithdraw, recordWithdrawalAttempt, checkWithdrawalLimit } = useCreditScore();
@@ -461,27 +461,36 @@ const Account = () => {
             className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 bg-muted/30 hover:bg-muted/50 rounded-xl border border-border transition-all group relative"
           >
             <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-colors ${
-              kycData.status === 'approved' 
+              isAdvancedVerified 
                 ? 'border-green-500 bg-green-500/10' 
-                : kycData.status === 'pending'
+                : isPrimaryVerified
+                ? 'border-blue-500 bg-blue-500/10'
+                : kycData.primaryStatus === 'pending' || kycData.advancedStatus === 'pending'
                 ? 'border-yellow-500 bg-yellow-500/10'
                 : 'border-foreground/20 group-hover:border-primary group-hover:bg-primary/10'
             }`}>
               <UserCheck className={`w-4 h-4 md:w-5 md:h-5 ${
-                kycData.status === 'approved' 
+                isAdvancedVerified 
                   ? 'text-green-500' 
-                  : kycData.status === 'pending'
+                  : isPrimaryVerified
+                  ? 'text-blue-500'
+                  : kycData.primaryStatus === 'pending' || kycData.advancedStatus === 'pending'
                   ? 'text-yellow-500'
                   : ''
               }`} />
             </div>
             <span className="text-[10px] md:text-sm font-medium uppercase tracking-wider">Verify</span>
-            {kycData.status === 'approved' && (
+            {isAdvancedVerified && (
               <div className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-green-500 rounded-full flex items-center justify-center">
                 <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
               </div>
             )}
-            {kycData.status === 'pending' && (
+            {isPrimaryVerified && !isAdvancedVerified && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+              </div>
+            )}
+            {(kycData.primaryStatus === 'pending' || kycData.advancedStatus === 'pending') && !isPrimaryVerified && (
               <div className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-yellow-500 rounded-full flex items-center justify-center">
                 <Loader2 className="w-2.5 h-2.5 md:w-3 md:h-3 text-white animate-spin" />
               </div>
@@ -1026,189 +1035,302 @@ const Account = () => {
       toast.error('Please enter your ID number');
       return;
     }
-    if (!kycIdImage) {
-      toast.error('Please upload your ID document');
-      return;
-    }
 
-    submitKYC({
+    submitPrimaryKYC({
       fullName: kycName.trim(),
       idNumber: kycIdNumber.trim(),
       idType: kycIdType,
-      idImage: kycIdImage,
     });
 
-    toast.success('Identity verification submitted. Please wait for approval.');
+    toast.success('Primary verification submitted. Please wait for approval.');
     setKycName('');
     setKycIdNumber('');
-    setKycIdImage(null);
-    setKycIdFileName('');
+  };
+
+  // Advanced KYC states
+  const [advancedFrontImage, setAdvancedFrontImage] = useState<string | null>(null);
+  const [advancedBackImage, setAdvancedBackImage] = useState<string | null>(null);
+  const [advancedSelfie, setAdvancedSelfie] = useState<string | null>(null);
+
+  const handleAdvancedImageUpload = (type: 'front' | 'back' | 'selfie') => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size must be less than 5MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        if (type === 'front') setAdvancedFrontImage(result);
+        else if (type === 'back') setAdvancedBackImage(result);
+        else setAdvancedSelfie(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAdvancedKycSubmit = async () => {
+    if (!advancedFrontImage) {
+      toast.error('Please upload the front of your ID document');
+      return;
+    }
+
+    const success = await submitAdvancedKYC({
+      frontImageUrl: advancedFrontImage,
+      backImageUrl: advancedBackImage || undefined,
+      selfieUrl: advancedSelfie || undefined,
+    });
+
+    if (success) {
+      toast.success('Advanced verification submitted. Please wait for approval.');
+      setAdvancedFrontImage(null);
+      setAdvancedBackImage(null);
+      setAdvancedSelfie(null);
+    } else {
+      toast.error('Failed to submit advanced verification');
+    }
   };
 
   const renderVerification = () => {
-    const idTypeLabels = {
-      passport: 'Passport',
-      driver_license: "Driver's License",
-      national_id: 'National ID Card',
-      other: 'Other ID Document',
-    };
+    const { t } = useLanguage();
 
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Status Card */}
-        {kycData.status !== 'not_submitted' && (
-          <div className={`rounded-2xl p-6 border ${
-            kycData.status === 'approved' 
-              ? 'bg-green-500/10 border-green-500/30' 
-              : kycData.status === 'pending'
-              ? 'bg-yellow-500/10 border-yellow-500/30'
-              : 'bg-red-500/10 border-red-500/30'
-          }`}>
+        {/* Primary Verification Section */}
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              {kycData.status === 'approved' && <CheckCircle2 className="w-6 h-6 text-green-500" />}
-              {kycData.status === 'pending' && <Loader2 className="w-6 h-6 text-yellow-500 animate-spin" />}
-              {kycData.status === 'rejected' && <XCircle className="w-6 h-6 text-red-500" />}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                isPrimaryVerified ? 'bg-green-500/20' : 'bg-muted'
+              }`}>
+                {isPrimaryVerified ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : kycData.primaryStatus === 'pending' ? (
+                  <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />
+                ) : (
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                )}
+              </div>
               <div>
-                <p className="font-semibold">
-                  {kycData.status === 'approved' && 'Identity Verified'}
-                  {kycData.status === 'pending' && 'Verification Pending'}
-                  {kycData.status === 'rejected' && 'Verification Rejected'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {kycData.status === 'approved' && `Verified as: ${kycData.fullName}`}
-                  {kycData.status === 'pending' && 'Your documents are being reviewed. This usually takes 1-3 business days.'}
-                  {kycData.status === 'rejected' && 'Please submit valid documents again.'}
-                </p>
+                <h3 className="font-semibold">{t('kyc.primaryVerification')}</h3>
+                <p className="text-sm text-muted-foreground">{t('kyc.primaryDesc')}</p>
               </div>
             </div>
+            {isPrimaryVerified && (
+              <span className="px-3 py-1 bg-green-500/20 text-green-500 text-sm rounded-full font-medium">
+                {t('kyc.primaryPassed')}
+              </span>
+            )}
+            {kycData.primaryStatus === 'pending' && (
+              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-500 text-sm rounded-full font-medium">
+                {t('kyc.pending')}
+              </span>
+            )}
           </div>
-        )}
 
-        {/* Verification Form */}
-        {(kycData.status === 'not_submitted' || kycData.status === 'rejected') && (
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <UserCheck className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-lg">Identity Verification (KYC)</h3>
-            </div>
-
-            <div className="space-y-6">
-              {/* Full Name */}
+          {/* Primary Form - Show only if not verified */}
+          {!isPrimaryVerified && kycData.primaryStatus !== 'pending' && (
+            <div className="space-y-4 mt-4 pt-4 border-t border-border">
+              {kycData.primaryStatus === 'rejected' && kycData.rejectReason && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500">
+                  {t('kyc.rejected')}: {kycData.rejectReason}
+                </div>
+              )}
               <div className="space-y-2">
-                <Label>Full Name (as shown on ID)</Label>
+                <Label>{t('kyc.fullName')}</Label>
                 <Input
                   type="text"
-                  placeholder="Enter your full legal name"
+                  placeholder={t('kyc.enterFullName')}
                   value={kycName}
                   onChange={(e) => setKycName(e.target.value)}
                 />
               </div>
-
-              {/* ID Type Selection */}
               <div className="space-y-2">
-                <Label>ID Document Type</Label>
+                <Label>{t('kyc.idType')}</Label>
                 <Select value={kycIdType} onValueChange={(v) => setKycIdType(v as any)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="passport">Passport</SelectItem>
-                    <SelectItem value="driver_license">Driver's License</SelectItem>
-                    <SelectItem value="national_id">National ID Card</SelectItem>
-                    <SelectItem value="other">Other ID Document</SelectItem>
+                    <SelectItem value="passport">{t('kyc.passport')}</SelectItem>
+                    <SelectItem value="driver_license">{t('kyc.driverLicense')}</SelectItem>
+                    <SelectItem value="national_id">{t('kyc.nationalId')}</SelectItem>
+                    <SelectItem value="other">{t('kyc.other')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* ID Number */}
               <div className="space-y-2">
-                <Label>ID Number</Label>
+                <Label>{t('kyc.idNumber')}</Label>
                 <Input
                   type="text"
-                  placeholder="Enter your ID number"
+                  placeholder={t('kyc.enterId')}
                   value={kycIdNumber}
                   onChange={(e) => setKycIdNumber(e.target.value)}
                 />
               </div>
+              <Button 
+                onClick={handleKycSubmit}
+                className="w-full"
+              >
+                {t('common.submit')}
+              </Button>
+            </div>
+          )}
+        </div>
 
-              {/* ID Document Upload */}
+        {/* Advanced Verification Section */}
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                isAdvancedVerified ? 'bg-green-500/20' : 'bg-muted'
+              }`}>
+                {isAdvancedVerified ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : kycData.advancedStatus === 'pending' ? (
+                  <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />
+                ) : (
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold">{t('kyc.advancedVerification')}</h3>
+                <p className="text-sm text-muted-foreground">{t('kyc.advancedDesc')}</p>
+              </div>
+            </div>
+            {isAdvancedVerified && (
+              <span className="px-3 py-1 bg-green-500/20 text-green-500 text-sm rounded-full font-medium">
+                {t('kyc.advancedPassed')}
+              </span>
+            )}
+            {kycData.advancedStatus === 'pending' && (
+              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-500 text-sm rounded-full font-medium">
+                {t('kyc.pending')}
+              </span>
+            )}
+          </div>
+
+          {/* Advanced Form - Show only if primary is verified and advanced is not */}
+          {isPrimaryVerified && !isAdvancedVerified && kycData.advancedStatus !== 'pending' && (
+            <div className="space-y-4 mt-4 pt-4 border-t border-border">
+              {kycData.advancedStatus === 'rejected' && kycData.rejectReason && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500">
+                  {t('kyc.rejected')}: {kycData.rejectReason}
+                </div>
+              )}
+              
+              {/* Front ID */}
               <div className="space-y-2">
-                <Label>Upload ID Document</Label>
-                <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
+                <Label>{t('kyc.uploadFrontId')} *</Label>
+                <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary/50 transition-colors">
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleKycImageUpload}
+                    onChange={handleAdvancedImageUpload('front')}
                     className="hidden"
-                    id="kyc-upload"
+                    id="front-id-upload"
                   />
-                  <label htmlFor="kyc-upload" className="cursor-pointer">
-                    {kycIdImage ? (
-                      <div className="space-y-3">
-                        <div className="w-full max-w-xs mx-auto">
-                          <img 
-                            src={kycIdImage} 
-                            alt="ID Preview" 
-                            className="w-full h-auto rounded-lg border border-border"
-                          />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{kycIdFileName}</p>
-                        <p className="text-xs text-primary">Click to change</p>
-                      </div>
+                  <label htmlFor="front-id-upload" className="cursor-pointer">
+                    {advancedFrontImage ? (
+                      <img src={advancedFrontImage} alt="Front ID" className="max-h-32 mx-auto rounded-lg" />
                     ) : (
-                      <div className="space-y-3">
-                        <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-                          <FileText className="w-6 h-6 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Upload ID Document</p>
-                          <p className="text-sm text-muted-foreground">
-                            Click to upload a clear photo of your ID
-                          </p>
-                        </div>
+                      <div className="py-4">
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">{t('kyc.clickToUploadId')}</p>
                       </div>
                     )}
                   </label>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Accepted formats: JPG, PNG, PDF. Max size: 5MB
-                </p>
               </div>
 
-              {/* Submit Button */}
+              {/* Back ID (Optional) */}
+              <div className="space-y-2">
+                <Label>{t('kyc.uploadBackId')}</Label>
+                <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAdvancedImageUpload('back')}
+                    className="hidden"
+                    id="back-id-upload"
+                  />
+                  <label htmlFor="back-id-upload" className="cursor-pointer">
+                    {advancedBackImage ? (
+                      <img src={advancedBackImage} alt="Back ID" className="max-h-32 mx-auto rounded-lg" />
+                    ) : (
+                      <div className="py-4">
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">{t('kyc.clickToUploadId')}</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* Selfie (Optional) */}
+              <div className="space-y-2">
+                <Label>{t('kyc.uploadSelfie')}</Label>
+                <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAdvancedImageUpload('selfie')}
+                    className="hidden"
+                    id="selfie-upload"
+                  />
+                  <label htmlFor="selfie-upload" className="cursor-pointer">
+                    {advancedSelfie ? (
+                      <img src={advancedSelfie} alt="Selfie" className="max-h-32 mx-auto rounded-lg" />
+                    ) : (
+                      <div className="py-4">
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">{t('kyc.clickToUploadId')}</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
               <Button 
-                onClick={handleKycSubmit}
-                className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg font-medium"
+                onClick={handleAdvancedKycSubmit}
+                className="w-full"
               >
-                Submit Verification
-                <ChevronRight className="w-5 h-5 ml-2" />
+                {t('kyc.submitAdvanced')}
               </Button>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Message if primary not verified */}
+          {!isPrimaryVerified && (
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              {t('kyc.requiresPrimary')}
+            </div>
+          )}
+        </div>
 
         {/* Info Card */}
         <div className="bg-card border border-border rounded-2xl p-6">
           <h3 className="font-semibold mb-4 flex items-center gap-2">
             <div className="w-1 h-5 bg-primary rounded-full"></div>
-            Why Verify Your Identity?
+            {t('kyc.whyVerify')}
           </h3>
           <div className="space-y-3 text-sm">
             <div className="flex items-start gap-3">
               <Info className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <span>Required for loan applications and higher withdrawal limits</span>
+              <span>{t('kyc.reason1')}</span>
             </div>
             <div className="flex items-start gap-3">
               <Info className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <span>Protects your account from unauthorized access</span>
+              <span>{t('kyc.reason2')}</span>
             </div>
             <div className="flex items-start gap-3">
               <Info className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <span>Complies with financial regulations</span>
+              <span>{t('kyc.reason3')}</span>
             </div>
             <div className="flex items-start gap-3">
               <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <span>Verification usually takes 1-3 business days</span>
+              <span>{t('kyc.reason4')}</span>
             </div>
           </div>
         </div>
