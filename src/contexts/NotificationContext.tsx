@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { useLoan, Loan } from './LoanContext';
 import { useLanguage } from './LanguageContext';
+import { useAuth } from './AuthContext';
 
 export interface Notification {
   id: string;
@@ -28,6 +29,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [checkedLoans, setCheckedLoans] = useState<Set<string>>(new Set());
   const { loans } = useLoan();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const previousUserIdRef = useRef<string | null>(null);
 
   // Helper function to replace placeholders in translated strings
   const formatMessage = (template: string, values: Record<string, string | number>) => {
@@ -111,12 +114,26 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [loans, checkedLoans, t]);
 
+  // Clear notifications when user changes (logout/login different account)
   useEffect(() => {
+    const currentUserId = user?.id || null;
+    
+    if (previousUserIdRef.current !== currentUserId) {
+      // User changed - clear all notifications and checked loans
+      setNotifications([]);
+      setCheckedLoans(new Set());
+      previousUserIdRef.current = currentUserId;
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return; // Don't check if not logged in
+    
     checkLoanReminders();
     // Check every hour
     const interval = setInterval(checkLoanReminders, 60 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [checkLoanReminders]);
+  }, [checkLoanReminders, user]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
