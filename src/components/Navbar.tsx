@@ -31,7 +31,7 @@ const Navbar = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <MetaMaskLogo size={32} />
-            <span className="font-display font-semibold text-lg">MetaMask Trade</span>
+            <span className="font-display font-semibold text-lg">MMTrade</span>
           </Link>
 
           {/* Desktop Navigation */}

@@ -70,7 +70,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.loggingIn': 'Logging in...',
     'auth.registering': 'Registering...',
     'auth.backToHome': '← Back to Home',
-    'auth.welcomeBack': 'Welcome Back to MetaMask Trade',
+    'auth.welcomeBack': 'Welcome Back to MMTrade',
     'auth.startJourney': 'Start Your Investment Journey',
     'auth.accessPortfolio': 'Access your portfolio and continue trading with the most secure platform.',
     'auth.completeRegistration': 'Complete your registration and unlock the gateway to exciting investment opportunities.',
@@ -97,7 +97,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.backToMarket': 'Back to Market',
     
     // Hero Section
-    'hero.title': 'Buy, trade, and hold 350+ cryptocurrencies on MetaMask Trade',
+    'hero.title': 'Buy, trade, and hold 350+ cryptocurrencies on MMTrade',
     'hero.appStore': 'App Store',
     'hero.application': 'Application',
     'hero.appDescription': 'Mobile banking that throws out the role book and gives you a precision tool for managing your finances.',
@@ -564,7 +564,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.loggingIn': '登录中...',
     'auth.registering': '注册中...',
     'auth.backToHome': '← 返回首页',
-    'auth.welcomeBack': '欢迎回到 MetaMask Trade',
+    'auth.welcomeBack': '欢迎回到 MMTrade',
     'auth.startJourney': '开启您的投资之旅',
     'auth.accessPortfolio': '访问您的投资组合，使用最安全的平台继续交易。',
     'auth.completeRegistration': '完成注册，开启激动人心的投资机会。',
@@ -591,7 +591,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.backToMarket': '返回市场',
     
     // Hero Section
-    'hero.title': '在 MetaMask Trade 购买、交易和持有 350+ 种加密货币',
+    'hero.title': '在 MMTrade 购买、交易和持有 350+ 种加密货币',
     'hero.appStore': 'App Store',
     'hero.application': '应用程序',
     'hero.appDescription': '移动银行打破常规，为您提供精确的财务管理工具。',
@@ -1090,7 +1090,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.loggingIn': 'Iniciando sesión...',
     'auth.registering': 'Registrando...',
     'auth.backToHome': '← Volver al inicio',
-    'auth.welcomeBack': 'Bienvenido de nuevo a MetaMask Trade',
+    'auth.welcomeBack': 'Bienvenido de nuevo a MMTrade',
     'auth.startJourney': 'Comienza tu viaje de inversión',
     'auth.accessPortfolio': 'Accede a tu portafolio y continúa operando con la plataforma más segura.',
     'auth.completeRegistration': 'Completa tu registro y desbloquea oportunidades de inversión.',
@@ -1117,7 +1117,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.backToMarket': 'Volver al mercado',
     
     // Hero Section
-    'hero.title': 'Compra, intercambia y mantén más de 350 criptomonedas en MetaMask Trade',
+    'hero.title': 'Compra, intercambia y mantén más de 350 criptomonedas en MMTrade',
     'hero.appStore': 'App Store',
     'hero.application': 'Aplicación',
     'hero.appDescription': 'Banca móvil que rompe las reglas y te da una herramienta precisa para gestionar tus finanzas.',
@@ -1464,7 +1464,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.loggingIn': 'लॉगिन हो रहा है...',
     'auth.registering': 'पंजीकरण हो रहा है...',
     'auth.backToHome': '← होम पर वापस जाएं',
-    'auth.welcomeBack': 'MetaMask Trade में आपका स्वागत है',
+    'auth.welcomeBack': 'MMTrade में आपका स्वागत है',
     'auth.startJourney': 'अपनी निवेश यात्रा शुरू करें',
     'auth.accessPortfolio': 'अपने पोर्टफोलियो तक पहुंचें और सबसे सुरक्षित प्लेटफॉर्म के साथ ट्रेडिंग जारी रखें।',
     'auth.completeRegistration': 'पंजीकरण पूरा करें और निवेश के अवसर अनलॉक करें।',
@@ -1491,7 +1491,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.backToMarket': 'बाज़ार पर वापस जाएं',
     
     // Hero Section
-    'hero.title': 'MetaMask Trade पर 350+ क्रिप्टोकरेंसी खरीदें, ट्रेड करें और होल्ड करें',
+    'hero.title': 'MMTrade पर 350+ क्रिप्टोकरेंसी खरीदें, ट्रेड करें और होल्ड करें',
     'hero.appStore': 'App Store',
     'hero.application': 'एप्लिकेशन',
     'hero.appDescription': 'मोबाइल बैंकिंग जो नियमों को तोड़ती है और आपको वित्त प्रबंधन का सटीक उपकरण देती है।',
@@ -1838,7 +1838,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.loggingIn': 'Connexion en cours...',
     'auth.registering': 'Inscription en cours...',
     'auth.backToHome': "← Retour à l'accueil",
-    'auth.welcomeBack': 'Bienvenue sur MetaMask Trade',
+    'auth.welcomeBack': 'Bienvenue sur MMTrade',
     'auth.startJourney': 'Commencez votre voyage d\'investissement',
     'auth.accessPortfolio': 'Accédez à votre portefeuille et continuez à trader avec la plateforme la plus sécurisée.',
     'auth.completeRegistration': 'Complétez votre inscription et débloquez des opportunités d\'investissement.',
@@ -1865,7 +1865,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.backToMarket': 'Retour au marché',
     
     // Hero Section
-    'hero.title': 'Achetez, échangez et conservez plus de 350 cryptomonnaies sur MetaMask Trade',
+    'hero.title': 'Achetez, échangez et conservez plus de 350 cryptomonnaies sur MMTrade',
     'hero.appStore': 'App Store',
     'hero.application': 'Application',
     'hero.appDescription': 'Banque mobile qui casse les codes et vous donne un outil précis pour gérer vos finances.',
@@ -2212,7 +2212,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.loggingIn': 'جاري تسجيل الدخول...',
     'auth.registering': 'جاري التسجيل...',
     'auth.backToHome': '← العودة للرئيسية',
-    'auth.welcomeBack': 'مرحباً بعودتك إلى MetaMask Trade',
+    'auth.welcomeBack': 'مرحباً بعودتك إلى MMTrade',
     'auth.startJourney': 'ابدأ رحلة استثمارك',
     'auth.accessPortfolio': 'الوصول إلى محفظتك ومواصلة التداول مع أكثر منصة أماناً.',
     'auth.completeRegistration': 'أكمل تسجيلك واكتشف فرص الاستثمار.',
@@ -2239,7 +2239,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.backToMarket': 'العودة للسوق',
     
     // Hero Section
-    'hero.title': 'اشترِ وتداول واحتفظ بأكثر من 350 عملة مشفرة على MetaMask Trade',
+    'hero.title': 'اشترِ وتداول واحتفظ بأكثر من 350 عملة مشفرة على MMTrade',
     'hero.appStore': 'App Store',
     'hero.application': 'التطبيق',
     'hero.appDescription': 'الخدمات المصرفية عبر الهاتف المحمول التي تكسر القواعد وتمنحك أداة دقيقة لإدارة أموالك.',
