@@ -485,6 +485,24 @@ const translations: Record<Language, Record<string, string>> = {
     'account.miningAmount': 'Mining',
     'account.miningEarnings': 'Mining Earnings',
     
+    // Footer
+    'footer.language': 'Language',
+    'footer.products': 'Products',
+    'footer.spotTrading': 'Spot Trading',
+    'footer.marginTrading': 'Margin Trading',
+    'footer.derivatives': 'Derivatives',
+    'footer.loans': 'Loans',
+    'footer.services': 'Services',
+    'footer.copyTrading': 'Copy Trading',
+    'footer.api': 'API',
+    'footer.mobileApp': 'Mobile App',
+    'footer.support': 'Support',
+    'footer.helpCenter': 'Help Center',
+    'footer.contactUs': 'Contact Us',
+    'footer.faq': 'FAQ',
+    'footer.fees': 'Fees',
+    'footer.legal': 'Legal',
+    
   },
   zh: {
     // Common

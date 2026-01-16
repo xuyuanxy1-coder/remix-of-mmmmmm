@@ -38,9 +38,6 @@ const Footer = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props
               <MetaMaskLogo size={32} />
               <span className="font-display font-semibold text-lg">MetaMask Trade</span>
             </div>
-            <p className="text-background/60 text-sm leading-relaxed mb-6">
-              {t('footer.description')}
-            </p>
             
             {/* Language Selector */}
             <div className="flex items-center gap-2 text-sm">
@@ -183,7 +180,7 @@ const Footer = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-background/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-background/40 text-sm">
-            © 2024 MetaMask Trade. {t('footer.allRightsReserved')}
+            © 2024 MetaMask Trade. All Rights Reserved
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-background/60 hover:text-background transition-colors">
