@@ -192,6 +192,7 @@ const AdminSmartTrades = () => {
       }
 
       // Refresh trades list
+      window.dispatchEvent(new Event('refreshPendingCounts'));
       fetchPendingTrades();
     } catch (error: any) {
       console.error('Failed to set trade result:', error);
