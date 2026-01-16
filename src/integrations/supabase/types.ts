@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_score_logs: {
+        Row: {
+          change_amount: number
+          created_at: string
+          id: string
+          new_score: number
+          previous_score: number
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          change_amount: number
+          created_at?: string
+          id?: string
+          new_score: number
+          previous_score: number
+          reason: string
+          user_id: string
+        }
+        Update: {
+          change_amount?: number
+          created_at?: string
+          id?: string
+          new_score?: number
+          previous_score?: number
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kyc_records: {
         Row: {
           back_image_url: string | null
@@ -203,6 +233,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          credit_score: number
           email: string | null
           id: string
           is_frozen: boolean | null
@@ -217,6 +248,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          credit_score?: number
           email?: string | null
           id?: string
           is_frozen?: boolean | null
@@ -231,6 +263,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          credit_score?: number
           email?: string | null
           id?: string
           is_frozen?: boolean | null
@@ -268,6 +301,24 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string
+        }
+        Relationships: []
+      }
+      trade_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -339,6 +390,24 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawal_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
           user_id?: string
         }
         Relationships: []

@@ -51,6 +51,7 @@ import {
   MapPin,
   Calendar,
   Key,
+  Star,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -78,6 +79,7 @@ interface UserWithDetails {
   loanSummary: LoanSummary;
   last_login_ip: string | null;
   last_login_at: string | null;
+  credit_score: number;
 }
 
 interface Transaction {
@@ -157,12 +159,18 @@ const AdminUserList = () => {
     open: false,
     user: null,
   });
+  const [creditScoreModal, setCreditScoreModal] = useState<{ open: boolean; user: UserWithDetails | null }>({
+    open: false,
+    user: null,
+  });
 
   // Form states
   const [balanceAmount, setBalanceAmount] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [balanceReason, setBalanceReason] = useState('');
+  const [creditScoreChange, setCreditScoreChange] = useState('');
+  const [creditScoreReason, setCreditScoreReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTxLoading, setIsTxLoading] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
@@ -280,6 +288,7 @@ const AdminUserList = () => {
           },
           last_login_ip: profile.last_login_ip || null,
           last_login_at: profile.last_login_at || null,
+          credit_score: (profile as any).credit_score ?? 100,
         };
       });
 
@@ -444,6 +453,44 @@ const AdminUserList = () => {
     } catch (error: any) {
       console.error('Error updating password:', error);
       toast.error(error.message || '密码修改失败');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreditScoreSubmit = async () => {
+    if (!creditScoreModal.user || !creditScoreChange) return;
+
+    setIsSubmitting(true);
+    try {
+      const changeAmount = parseInt(creditScoreChange);
+      const currentScore = creditScoreModal.user.credit_score;
+      const newScore = Math.max(0, Math.min(100, currentScore + changeAmount));
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ credit_score: newScore })
+        .eq('user_id', creditScoreModal.user.user_id);
+
+      if (error) throw error;
+
+      // Log the change
+      await supabase.from('credit_score_logs').insert({
+        user_id: creditScoreModal.user.user_id,
+        previous_score: currentScore,
+        new_score: newScore,
+        change_amount: changeAmount,
+        reason: `管理员调整: ${creditScoreReason || '信用分调整'}`,
+      });
+
+      toast.success('信用分修改成功');
+      setCreditScoreModal({ open: false, user: null });
+      setCreditScoreChange('');
+      setCreditScoreReason('');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error updating credit score:', error);
+      toast.error('信用分修改失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -722,6 +769,10 @@ const AdminUserList = () => {
                           <DropdownMenuItem onClick={() => setPasswordModal({ open: true, user })}>
                             <Key className="w-4 h-4 mr-2" />
                             修改密码
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setCreditScoreModal({ open: true, user })}>
+                            <Star className="w-4 h-4 mr-2" />
+                            调整信用分 ({user.credit_score})
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1164,6 +1215,58 @@ const AdminUserList = () => {
               取消
             </Button>
             <Button onClick={handlePasswordSubmit} disabled={isSubmitting || !newPassword || !confirmPassword}>
+              {isSubmitting ? '处理中...' : '确认修改'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Score Modal */}
+      <Dialog open={creditScoreModal.open} onOpenChange={(open) => {
+        if (!open) {
+          setCreditScoreModal({ open: false, user: null });
+          setCreditScoreChange('');
+          setCreditScoreReason('');
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5" />
+              调整信用分 - {creditScoreModal.user?.username || creditScoreModal.user?.email}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">当前信用分</p>
+              <p className={`text-2xl font-bold ${(creditScoreModal.user?.credit_score ?? 100) >= 100 ? 'text-green-500' : 'text-red-500'}`}>
+                {creditScoreModal.user?.credit_score ?? 100}/100
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>调整数值</Label>
+              <Input
+                type="number"
+                placeholder="例如: 10 为增加, -10 为减少"
+                value={creditScoreChange}
+                onChange={(e) => setCreditScoreChange(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">正数 = 增加，负数 = 减少（范围 0-100）</p>
+            </div>
+            <div className="space-y-2">
+              <Label>原因</Label>
+              <Textarea placeholder="请输入调整原因" value={creditScoreReason} onChange={(e) => setCreditScoreReason(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setCreditScoreModal({ open: false, user: null });
+              setCreditScoreChange('');
+              setCreditScoreReason('');
+            }}>
+              取消
+            </Button>
+            <Button onClick={handleCreditScoreSubmit} disabled={isSubmitting || !creditScoreChange}>
               {isSubmitting ? '处理中...' : '确认修改'}
             </Button>
           </DialogFooter>

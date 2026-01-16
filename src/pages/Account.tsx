@@ -20,7 +20,8 @@ import {
   Loader2,
   LogOut,
   Ban,
-  History
+  History,
+  Star
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
@@ -49,6 +50,7 @@ import {
 import { useLoan } from '@/contexts/LoanContext';
 import { useKYC } from '@/contexts/KYCContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useCreditScore } from '@/hooks/useCreditScore';
 
 type AccountView = 'overview' | 'withdraw' | 'recharge' | 'exchange' | 'verification';
 
@@ -93,10 +95,17 @@ const Account = () => {
   
   const { assets, getBalance } = useAssets();
   const { getPrice } = useCryptoPrices();
-  const { loans } = useLoan();
+  const { loans, calculateOwed, activeLoans } = useLoan();
   const { kycData, submitKYC, isVerified } = useKYC();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const { creditScore, canWithdraw, recordWithdrawalAttempt, checkWithdrawalLimit } = useCreditScore();
+
+  // Calculate total remaining loan amount
+  const totalLoanOwed = activeLoans.reduce((total, loan) => {
+    const owed = calculateOwed(loan);
+    return total + owed.total;
+  }, 0);
 
   // Fetch wallet addresses from database
   useEffect(() => {
@@ -135,6 +144,9 @@ const Account = () => {
 
   // Check if user has active loans (approved or overdue status)
   const hasActiveLoan = loans.some(loan => loan.status === 'approved' || loan.status === 'overdue');
+  
+  // Credit score check for withdrawal
+  const isLowCreditScore = creditScore < 100;
 
   // Check if account is frozen
   const [isFrozen, setIsFrozen] = useState(false);
@@ -221,6 +233,14 @@ const Account = () => {
 
     if (!user?.id) {
       toast.error('Please login first');
+      return;
+    }
+
+    // Record withdrawal attempt and check frequency limit
+    await recordWithdrawalAttempt();
+    const withinLimit = await checkWithdrawalLimit();
+    if (!withinLimit) {
+      toast.error('You have attempted to withdraw too many times this hour. Your credit score has been reduced.');
       return;
     }
 
@@ -384,15 +404,26 @@ const Account = () => {
           </div>
         </div>
 
-        {/* Balance & Loan */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        {/* Balance, Loan & Credit Score */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-muted/50 rounded-xl p-4 border border-border">
             <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Balance</p>
             <p className="text-2xl font-semibold">{getBalance('USDT').toLocaleString()} USDT</p>
           </div>
           <div className="bg-muted/50 rounded-xl p-4 border border-border">
             <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Loan</p>
-            <p className="text-2xl font-semibold">0.00 USDT</p>
+            <p className={`text-2xl font-semibold ${totalLoanOwed > 0 ? 'text-[hsl(0,70%,55%)]' : ''}`}>
+              {totalLoanOwed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+            </p>
+          </div>
+          <div className={`rounded-xl p-4 border ${creditScore >= 100 ? 'bg-[hsl(145,60%,45%)]/10 border-[hsl(145,60%,45%)]/30' : 'bg-[hsl(0,70%,55%)]/10 border-[hsl(0,70%,55%)]/30'}`}>
+            <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Star className="w-3 h-3" />
+              Credit Score
+            </p>
+            <p className={`text-2xl font-semibold ${creditScore >= 100 ? 'text-[hsl(145,60%,45%)]' : 'text-[hsl(0,70%,55%)]'}`}>
+              {creditScore}/100
+            </p>
           </div>
         </div>
 
@@ -516,7 +547,7 @@ const Account = () => {
     </div>
   );
 
-  const isActionDisabled = hasActiveLoan || isFrozen;
+  const isActionDisabled = hasActiveLoan || isFrozen || isLowCreditScore;
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { color: string; label: string }> = {
@@ -555,6 +586,21 @@ const Account = () => {
               <p className="font-medium text-red-600 dark:text-red-400">Withdrawal Locked</p>
               <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">
                 You have an active loan. Withdrawals are disabled until all loans are fully repaid.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Low Credit Score Warning */}
+      {isLowCreditScore && !isFrozen && !hasActiveLoan && (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <Star className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-orange-600 dark:text-orange-400">Low Credit Score</p>
+              <p className="text-sm text-orange-600/80 dark:text-orange-400/80 mt-1">
+                Your credit score is {creditScore}/100. Withdrawals are disabled until your credit score reaches 100. Please repay overdue loans on time.
               </p>
             </div>
           </div>
