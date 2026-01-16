@@ -13,6 +13,7 @@ const BottomNav = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((pr
     { label: t('nav.home'), href: '/', icon: Home },
     { label: t('nav.market'), href: '/market', icon: BarChart3 },
     { label: t('nav.trade'), href: '/trade/BTC', icon: TrendingUp },
+    { label: t('nav.loan'), href: '/loan', icon: Landmark },
     { label: t('nav.mining'), href: '/mining', icon: Pickaxe },
     { label: t('nav.account'), href: '/account', icon: User },
   ];
@@ -20,8 +21,9 @@ const BottomNav = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((pr
   const adminNavItems = [
     { label: t('nav.home'), href: '/', icon: Home },
     { label: t('nav.market'), href: '/market', icon: BarChart3 },
-    { label: t('nav.trade'), href: '/trade/BTC', icon: TrendingUp },
     { label: t('nav.admin'), href: '/admin', icon: Shield },
+    { label: t('nav.loan'), href: '/loan', icon: Landmark },
+    { label: t('nav.mining'), href: '/mining', icon: Pickaxe },
     { label: t('nav.account'), href: '/account', icon: User },
   ];
 
