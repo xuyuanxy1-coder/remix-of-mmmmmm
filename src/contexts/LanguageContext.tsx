@@ -119,6 +119,9 @@ const translations: Record<Language, Record<string, string>> = {
     'features.simpleStable': 'Simple and stable',
     'features.smartTrading': 'Smart trading',
     'features.smartTradingDesc': 'One click to create your earning plan',
+    'features.highYield': 'Up to 1.5% daily',
+    'features.cryptoMining': 'Crypto Mining',
+    'features.miningDesc': 'Lock USDT and earn stable daily returns with our mining plans.',
     
     // Feature badges
     'feature.bankSecurity': 'Bank-Level Security',
@@ -592,6 +595,9 @@ const translations: Record<Language, Record<string, string>> = {
     'features.simpleStable': '简单稳定',
     'features.smartTrading': '智能交易',
     'features.smartTradingDesc': '一键创建您的收益计划',
+    'features.highYield': '日收益高达1.5%',
+    'features.cryptoMining': '加密挖矿',
+    'features.miningDesc': '锁定USDT，通过我们的挖矿计划获取稳定日收益。',
     
     // Feature badges
     'feature.bankSecurity': '银行级安全',
@@ -1115,6 +1121,9 @@ const translations: Record<Language, Record<string, string>> = {
     'features.simpleStable': 'Simple y estable',
     'features.smartTrading': 'Trading inteligente',
     'features.smartTradingDesc': 'Un clic para crear tu plan de ganancias',
+    'features.highYield': 'Hasta 1.5% diario',
+    'features.cryptoMining': 'Minería de Cripto',
+    'features.miningDesc': 'Bloquea USDT y gana rendimientos diarios estables con nuestros planes de minería.',
     
     // Feature badges
     'feature.bankSecurity': 'Seguridad bancaria',
@@ -1486,6 +1495,9 @@ const translations: Record<Language, Record<string, string>> = {
     'features.simpleStable': 'सरल और स्थिर',
     'features.smartTrading': 'स्मार्ट ट्रेडिंग',
     'features.smartTradingDesc': 'एक क्लिक में अपनी कमाई योजना बनाएं',
+    'features.highYield': 'दैनिक 1.5% तक',
+    'features.cryptoMining': 'क्रिप्टो माइनिंग',
+    'features.miningDesc': 'USDT लॉक करें और हमारी माइनिंग योजनाओं से स्थिर दैनिक रिटर्न कमाएं।',
     
     // Feature badges
     'feature.bankSecurity': 'बैंक-स्तरीय सुरक्षा',
@@ -1857,6 +1869,9 @@ const translations: Record<Language, Record<string, string>> = {
     'features.simpleStable': 'Simple et stable',
     'features.smartTrading': 'Trading intelligent',
     'features.smartTradingDesc': 'Un clic pour créer votre plan de gains',
+    'features.highYield': "Jusqu'à 1,5% par jour",
+    'features.cryptoMining': 'Minage de Crypto',
+    'features.miningDesc': 'Verrouillez USDT et gagnez des rendements quotidiens stables avec nos plans de minage.',
     
     // Feature badges
     'feature.bankSecurity': 'Sécurité bancaire',
@@ -2228,6 +2243,9 @@ const translations: Record<Language, Record<string, string>> = {
     'features.simpleStable': 'بسيط ومستقر',
     'features.smartTrading': 'التداول الذكي',
     'features.smartTradingDesc': 'نقرة واحدة لإنشاء خطة أرباحك',
+    'features.highYield': 'حتى 1.5% يومياً',
+    'features.cryptoMining': 'تعدين العملات المشفرة',
+    'features.miningDesc': 'قم بقفل USDT واكسب عوائد يومية مستقرة مع خطط التعدين لدينا.',
     
     // Feature badges
     'feature.bankSecurity': 'أمان بنكي',

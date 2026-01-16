@@ -1,4 +1,4 @@
-import { ArrowRight, TrendingUp, Coins, Zap } from 'lucide-react';
+import { ArrowRight, TrendingUp, Coins, Pickaxe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -23,12 +23,12 @@ const FeaturesSection = () => {
       link: '/loan',
     },
     {
-      icon: Zap,
-      badge: t('features.simpleStable'),
-      title: t('features.smartTrading'),
-      description: t('features.smartTradingDesc'),
-      color: 'bg-primary/10 text-primary',
-      link: '/trade/BTC',
+      icon: Pickaxe,
+      badge: t('features.highYield'),
+      title: t('features.cryptoMining'),
+      description: t('features.miningDesc'),
+      color: 'bg-amber-500/10 text-amber-600',
+      link: '/mining',
     },
   ];
 
