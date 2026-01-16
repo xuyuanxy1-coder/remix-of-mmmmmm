@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
@@ -69,7 +69,7 @@ const RECHARGE_NETWORKS = [
   { id: 'ETH', name: 'ETH' },
 ];
 
-const Account = () => {
+const Account = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [currentView, setCurrentView] = useState<AccountView>('overview');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
@@ -1358,6 +1358,8 @@ const Account = () => {
       <BottomNav />
     </div>
   );
-};
+});
+
+Account.displayName = 'Account';
 
 export default Account;

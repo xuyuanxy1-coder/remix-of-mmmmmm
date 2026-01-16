@@ -1,8 +1,9 @@
+import React from 'react';
 import { useTradeHistory, TradeRecord } from '@/contexts/TradeHistoryContext';
 import { TrendingUp, TrendingDown, Clock, History, Trophy, Target } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-const TradeHistory = () => {
+const TradeHistory = React.forwardRef<HTMLDivElement>((_, ref) => {
   const { trades, getTotalProfit, getWinRate } = useTradeHistory();
   
   const totalProfit = getTotalProfit();
@@ -89,7 +90,9 @@ const TradeHistory = () => {
       </ScrollArea>
     </div>
   );
-};
+});
+
+TradeHistory.displayName = 'TradeHistory';
 
 interface TradeItemProps {
   trade: TradeRecord;
