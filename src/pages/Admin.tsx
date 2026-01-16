@@ -20,6 +20,9 @@ interface PendingCounts {
   mining: number;
 }
 
+// Custom event for refreshing counts
+const REFRESH_PENDING_COUNTS_EVENT = 'refreshPendingCounts';
+
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, logout } = useAuth();
   const { t } = useLanguage();
@@ -28,66 +31,76 @@ const Admin = () => {
   const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ applications: 0, trades: 0, mining: 0 });
 
   // Fetch pending counts
+  const fetchPendingCounts = async () => {
+    if (!isAdmin) return;
+
+    try {
+      // Count pending transactions (deposits + withdrawals)
+      const { count: txCount } = await supabase
+        .from('transactions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .in('type', ['deposit', 'withdraw']);
+
+      // Count pending loans
+      const { count: loanCount } = await supabase
+        .from('loans')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Count pending KYC
+      const { count: kycCount } = await supabase
+        .from('kyc_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Count pending loan repayments
+      const { count: repaymentCount } = await supabase
+        .from('loan_repayments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Count pending trades (manual mode)
+      const { count: tradeCount } = await supabase
+        .from('transactions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .eq('type', 'trade');
+
+      // Count pending mining investments
+      const { count: miningCount } = await supabase
+        .from('mining_investments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      const totalApplications = (txCount || 0) + (loanCount || 0) + (kycCount || 0) + (repaymentCount || 0);
+
+      setPendingCounts({
+        applications: totalApplications,
+        trades: tradeCount || 0,
+        mining: miningCount || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching pending counts:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchPendingCounts = async () => {
-      if (!isAdmin) return;
-
-      try {
-        // Count pending transactions (deposits + withdrawals)
-        const { count: txCount } = await supabase
-          .from('transactions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending')
-          .in('type', ['deposit', 'withdraw']);
-
-        // Count pending loans
-        const { count: loanCount } = await supabase
-          .from('loans')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-
-        // Count pending KYC
-        const { count: kycCount } = await supabase
-          .from('kyc_records')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-
-        // Count pending loan repayments
-        const { count: repaymentCount } = await supabase
-          .from('loan_repayments')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-
-        // Count pending trades (manual mode)
-        const { count: tradeCount } = await supabase
-          .from('transactions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending')
-          .eq('type', 'trade');
-
-        // Count pending mining investments
-        const { count: miningCount } = await supabase
-          .from('mining_investments')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-
-        const totalApplications = (txCount || 0) + (loanCount || 0) + (kycCount || 0) + (repaymentCount || 0);
-
-        setPendingCounts({
-          applications: totalApplications,
-          trades: tradeCount || 0,
-          mining: miningCount || 0,
-        });
-      } catch (error) {
-        console.error('Error fetching pending counts:', error);
-      }
-    };
-
     fetchPendingCounts();
     
     // Refresh every 30 seconds
     const interval = setInterval(fetchPendingCounts, 30000);
-    return () => clearInterval(interval);
+
+    // Listen for refresh event from child components
+    const handleRefresh = () => {
+      fetchPendingCounts();
+    };
+    window.addEventListener(REFRESH_PENDING_COUNTS_EVENT, handleRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(REFRESH_PENDING_COUNTS_EVENT, handleRefresh);
+    };
   }, [isAdmin]);
 
   useEffect(() => {

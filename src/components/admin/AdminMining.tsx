@@ -159,6 +159,7 @@ const AdminMining = () => {
       toast.success('Mining application approved');
       setActionModal({ open: false, type: null, investment: null });
       setAdminNote('');
+      window.dispatchEvent(new Event('refreshPendingCounts'));
       fetchInvestments();
     } catch (error) {
       console.error('Approve error:', error);
@@ -187,6 +188,7 @@ const AdminMining = () => {
       toast.success('Mining application rejected');
       setActionModal({ open: false, type: null, investment: null });
       setAdminNote('');
+      window.dispatchEvent(new Event('refreshPendingCounts'));
       fetchInvestments();
     } catch (error) {
       console.error('Reject error:', error);

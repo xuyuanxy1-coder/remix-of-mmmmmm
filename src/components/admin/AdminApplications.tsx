@@ -265,25 +265,8 @@ const AdminApplications = () => {
             .eq('currency', currency);
         }
         
-        // For withdrawals, deduct from user balance
-        if (app.type === 'withdraw') {
-          const { data: asset } = await supabase
-            .from('assets')
-            .select('balance')
-            .eq('user_id', app.user_id)
-            .eq('currency', currency)
-            .single();
-
-          const currentBalance = asset?.balance || 0;
-          const withdrawAmount = app.amount || 0;
-          const newBalance = Math.max(0, currentBalance - withdrawAmount);
-          
-          await supabase
-            .from('assets')
-            .update({ balance: newBalance })
-            .eq('user_id', app.user_id)
-            .eq('currency', currency);
-        }
+        // For withdrawals, balance was already deducted when user submitted
+        // Do NOT deduct again - just mark as completed
 
         await supabase
           .from('transactions')
@@ -332,6 +315,7 @@ const AdminApplications = () => {
           .eq('id', app.id);
 
         toast.success(`贷款已批准，${loanAmount} ${currency} 已添加到用户余额`);
+        window.dispatchEvent(new Event('refreshPendingCounts'));
         fetchApplications();
         return;
       } else if (app.table_name === 'loan_repayments') {
@@ -374,6 +358,7 @@ const AdminApplications = () => {
         }
 
         toast.success('Repayment approved');
+        window.dispatchEvent(new Event('refreshPendingCounts'));
         fetchApplications();
         return;
       } else if (app.table_name === 'kyc_records') {
@@ -387,6 +372,7 @@ const AdminApplications = () => {
       }
 
       toast.success('申请已通过');
+      window.dispatchEvent(new Event('refreshPendingCounts'));
       fetchApplications();
     } catch (error: any) {
       console.error('Error approving:', error);
@@ -404,6 +390,24 @@ const AdminApplications = () => {
       const app = rejectModal.app;
       
       if (app.table_name === 'transactions') {
+        // For withdrawals, refund the balance since it was deducted on submission
+        if (app.type === 'withdraw') {
+          const currency = app.currency || 'USDT';
+          const { data: asset } = await supabase
+            .from('assets')
+            .select('balance')
+            .eq('user_id', app.user_id)
+            .eq('currency', currency)
+            .single();
+
+          const newBalance = (asset?.balance || 0) + (app.amount || 0);
+          await supabase
+            .from('assets')
+            .update({ balance: newBalance })
+            .eq('user_id', app.user_id)
+            .eq('currency', currency);
+        }
+
         await supabase
           .from('transactions')
           .update({ status: 'cancelled', note: rejectReason || app.details })
@@ -436,6 +440,7 @@ const AdminApplications = () => {
       toast.success('申请已拒绝');
       setRejectModal({ open: false, app: null });
       setRejectReason('');
+      window.dispatchEvent(new Event('refreshPendingCounts'));
       fetchApplications();
     } catch (error: any) {
       console.error('Error rejecting:', error);
