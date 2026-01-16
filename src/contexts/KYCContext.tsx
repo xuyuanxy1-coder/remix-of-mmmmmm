@@ -2,19 +2,28 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+export type VerificationLevel = 'none' | 'primary' | 'advanced';
+
 export interface KYCData {
   fullName: string;
   idNumber: string;
   idType: 'passport' | 'driver_license' | 'national_id' | 'other';
-  idImage: string | null;
-  status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+  frontImageUrl: string | null;
+  backImageUrl: string | null;
+  selfieUrl: string | null;
+  verificationLevel: VerificationLevel;
+  primaryStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+  advancedStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected';
   submittedAt?: Date;
   rejectReason?: string;
 }
 
 interface KYCContextType {
   kycData: KYCData;
-  submitKYC: (data: Omit<KYCData, 'status' | 'submittedAt' | 'rejectReason'>) => Promise<boolean>;
+  submitPrimaryKYC: (data: { fullName: string; idNumber: string; idType: string }) => Promise<boolean>;
+  submitAdvancedKYC: (data: { frontImageUrl: string; backImageUrl?: string; selfieUrl?: string }) => Promise<boolean>;
+  isPrimaryVerified: boolean;
+  isAdvancedVerified: boolean;
   isVerified: boolean;
   refreshKYCStatus: () => Promise<void>;
   isLoading: boolean;
@@ -24,8 +33,12 @@ const defaultKYCData: KYCData = {
   fullName: '',
   idNumber: '',
   idType: 'passport',
-  idImage: null,
-  status: 'not_submitted',
+  frontImageUrl: null,
+  backImageUrl: null,
+  selfieUrl: null,
+  verificationLevel: 'none',
+  primaryStatus: 'not_submitted',
+  advancedStatus: 'not_submitted',
 };
 
 const KYCContext = createContext<KYCContextType | undefined>(undefined);
@@ -55,12 +68,31 @@ export const KYCProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
+        const verificationLevel = data.verification_level as VerificationLevel;
+        const status = data.status as 'pending' | 'approved' | 'rejected';
+        
+        // Determine primary and advanced status based on verification_level and overall status
+        let primaryStatus: KYCData['primaryStatus'] = 'not_submitted';
+        let advancedStatus: KYCData['advancedStatus'] = 'not_submitted';
+        
+        if (verificationLevel === 'primary') {
+          primaryStatus = status;
+        } else if (verificationLevel === 'advanced') {
+          // If advanced is submitted, primary must be approved
+          primaryStatus = 'approved';
+          advancedStatus = status;
+        }
+        
         setKYCData({
           fullName: data.real_name,
           idNumber: data.id_number,
           idType: data.id_type as KYCData['idType'],
-          idImage: data.front_image_url,
-          status: data.status as KYCData['status'],
+          frontImageUrl: data.front_image_url,
+          backImageUrl: data.back_image_url,
+          selfieUrl: data.selfie_url,
+          verificationLevel,
+          primaryStatus,
+          advancedStatus,
           submittedAt: new Date(data.created_at),
           rejectReason: data.reject_reason || undefined,
         });
@@ -78,7 +110,7 @@ export const KYCProvider = ({ children }: { children: ReactNode }) => {
     refreshKYCStatus();
   }, [refreshKYCStatus]);
 
-  const submitKYC = async (data: Omit<KYCData, 'status' | 'submittedAt' | 'rejectReason'>): Promise<boolean> => {
+  const submitPrimaryKYC = async (data: { fullName: string; idNumber: string; idType: string }): Promise<boolean> => {
     if (!user) return false;
 
     try {
@@ -89,29 +121,68 @@ export const KYCProvider = ({ children }: { children: ReactNode }) => {
           real_name: data.fullName,
           id_number: data.idNumber,
           id_type: data.idType,
-          front_image_url: data.idImage,
+          verification_level: 'primary',
           status: 'pending',
         }, {
           onConflict: 'user_id',
         });
 
       if (error) {
-        console.error('KYC submission failed:', error);
+        console.error('Primary KYC submission failed:', error);
         return false;
       }
 
       await refreshKYCStatus();
       return true;
     } catch (error) {
-      console.error('KYC submission failed:', error);
+      console.error('Primary KYC submission failed:', error);
       return false;
     }
   };
 
-  const isVerified = kycData.status === 'approved';
+  const submitAdvancedKYC = async (data: { frontImageUrl: string; backImageUrl?: string; selfieUrl?: string }): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('kyc_records')
+        .update({
+          front_image_url: data.frontImageUrl,
+          back_image_url: data.backImageUrl || null,
+          selfie_url: data.selfieUrl || null,
+          verification_level: 'advanced',
+          status: 'pending',
+        })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Advanced KYC submission failed:', error);
+        return false;
+      }
+
+      await refreshKYCStatus();
+      return true;
+    } catch (error) {
+      console.error('Advanced KYC submission failed:', error);
+      return false;
+    }
+  };
+
+  const isPrimaryVerified = kycData.primaryStatus === 'approved';
+  const isAdvancedVerified = kycData.advancedStatus === 'approved';
+  const isVerified = isPrimaryVerified; // Primary is enough for basic features
 
   return (
-    <KYCContext.Provider value={{ kycData, submitKYC, isVerified, refreshKYCStatus, isLoading }}>
+    <KYCContext.Provider value={{ 
+      kycData, 
+      submitPrimaryKYC, 
+      submitAdvancedKYC, 
+      isPrimaryVerified,
+      isAdvancedVerified,
+      isVerified, 
+      refreshKYCStatus, 
+      isLoading 
+    }}>
       {children}
     </KYCContext.Provider>
   );

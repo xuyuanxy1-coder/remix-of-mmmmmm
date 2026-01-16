@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, FileCheck, History, Settings, LogOut, Shield, TrendingUp } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Users, FileCheck, History, Settings, LogOut, Shield, TrendingUp, Pickaxe } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import AdminUserList from '@/components/admin/AdminUserList';
@@ -11,17 +12,20 @@ import AdminApplications from '@/components/admin/AdminApplications';
 import AdminTransactions from '@/components/admin/AdminTransactions';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminSmartTrades from '@/components/admin/AdminSmartTrades';
+import AdminMining from '@/components/admin/AdminMining';
 
 interface PendingCounts {
   applications: number;
   trades: number;
+  mining: number;
 }
 
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('users');
-  const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ applications: 0, trades: 0 });
+  const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ applications: 0, trades: 0, mining: 0 });
 
   // Fetch pending counts
   useEffect(() => {
@@ -61,11 +65,18 @@ const Admin = () => {
           .eq('status', 'pending')
           .eq('type', 'trade');
 
+        // Count pending mining investments
+        const { count: miningCount } = await supabase
+          .from('mining_investments')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
         const totalApplications = (txCount || 0) + (loanCount || 0) + (kycCount || 0) + (repaymentCount || 0);
 
         setPendingCounts({
           applications: totalApplications,
           trades: tradeCount || 0,
+          mining: miningCount || 0,
         });
       } catch (error) {
         console.error('Error fetching pending counts:', error);
@@ -139,8 +150,8 @@ const Admin = () => {
                 <Shield className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h1 className="font-display font-bold text-lg">管理后台</h1>
-                <p className="text-xs text-muted-foreground">欢迎, {user?.username}</p>
+                <h1 className="font-display font-bold text-lg">{t('nav.adminPanel')}</h1>
+                <p className="text-xs text-muted-foreground">{t('auth.welcomeBack').split(' ').slice(0, 2).join(' ')}, {user?.username}</p>
               </div>
             </div>
             <Button
@@ -150,7 +161,7 @@ const Admin = () => {
               className="gap-2"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">退出登录</span>
+              <span className="hidden sm:inline">{t('auth.logout')}</span>
             </Button>
           </div>
         </div>
@@ -159,28 +170,33 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="w-full grid grid-cols-5 h-auto p-1 bg-muted/50">
+          <TabsList className="w-full grid grid-cols-6 h-auto p-1 bg-muted/50">
             <TabsTrigger value="users" className="gap-2 py-3 data-[state=active]:bg-background">
               <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">用户管理</span>
+              <span className="hidden sm:inline">{t('admin.userManagement')}</span>
             </TabsTrigger>
             <TabsTrigger value="trades" className="gap-2 py-3 data-[state=active]:bg-background relative">
               <TrendingUp className="w-4 h-4" />
-              <span className="hidden sm:inline">交易控制</span>
+              <span className="hidden sm:inline">{t('nav.trade')}</span>
               <NotificationBadge count={pendingCounts.trades} />
+            </TabsTrigger>
+            <TabsTrigger value="mining" className="gap-2 py-3 data-[state=active]:bg-background relative">
+              <Pickaxe className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('nav.mining')}</span>
+              <NotificationBadge count={pendingCounts.mining} />
             </TabsTrigger>
             <TabsTrigger value="applications" className="gap-2 py-3 data-[state=active]:bg-background relative">
               <FileCheck className="w-4 h-4" />
-              <span className="hidden sm:inline">申请审核</span>
+              <span className="hidden sm:inline">{t('common.applications')}</span>
               <NotificationBadge count={pendingCounts.applications} />
             </TabsTrigger>
             <TabsTrigger value="transactions" className="gap-2 py-3 data-[state=active]:bg-background">
               <History className="w-4 h-4" />
-              <span className="hidden sm:inline">交易记录</span>
+              <span className="hidden sm:inline">{t('loan.history')}</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2 py-3 data-[state=active]:bg-background">
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">系统设置</span>
+              <span className="hidden sm:inline">{t('account.settings')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -190,6 +206,10 @@ const Admin = () => {
 
           <TabsContent value="trades" className="mt-6">
             <AdminSmartTrades />
+          </TabsContent>
+
+          <TabsContent value="mining" className="mt-6">
+            <AdminMining />
           </TabsContent>
 
           <TabsContent value="applications" className="mt-6">

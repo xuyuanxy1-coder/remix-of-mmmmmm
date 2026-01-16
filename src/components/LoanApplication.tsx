@@ -25,7 +25,7 @@ const LoanApplication = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
   const { applyLoan, loans } = useLoan();
-  const { kycData } = useKYC();
+  const { kycData, isVerified } = useKYC();
   const { user } = useAuth();
 
   // Check if account is frozen
@@ -47,7 +47,7 @@ const LoanApplication = () => {
 
   // Count active loans (approved or overdue status)
   const activeLoans = loans.filter((l) => l.status === 'approved' || l.status === 'overdue');
-  const kycNotCompleted = kycData.status !== 'approved';
+  const kycNotCompleted = !isVerified;
 
   const handleApply = async () => {
     const loanAmount = parseFloat(amount);
