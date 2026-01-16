@@ -13,8 +13,16 @@ const BottomNav = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((pr
     { label: t('nav.home'), href: '/', icon: Home },
     { label: t('nav.market'), href: '/market', icon: BarChart3 },
     { label: t('nav.trade'), href: '/trade/BTC', icon: TrendingUp },
-    { label: t('nav.loan'), href: '/loan', icon: Landmark },
-    { label: 'Mining', href: '/mining', icon: Pickaxe },
+    { label: t('nav.mining'), href: '/mining', icon: Pickaxe },
+    { label: t('nav.account'), href: '/account', icon: User },
+  ];
+
+  const adminNavItems = [
+    { label: t('nav.home'), href: '/', icon: Home },
+    { label: t('nav.market'), href: '/market', icon: BarChart3 },
+    { label: t('nav.trade'), href: '/trade/BTC', icon: TrendingUp },
+    { label: t('nav.admin'), href: '/admin', icon: Shield },
+    { label: t('nav.account'), href: '/account', icon: User },
   ];
 
   const isActive = (href: string) => {
@@ -24,12 +32,13 @@ const BottomNav = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((pr
     if (href === '/admin') {
       return location.pathname === '/admin';
     }
+    if (href === '/account') {
+      return location.pathname === '/account';
+    }
     return location.pathname.startsWith(href.split('/').slice(0, 2).join('/'));
   };
 
-  const items = isAdmin 
-    ? [...navItems.slice(0, 4), { label: t('nav.admin'), href: '/admin', icon: Shield }]
-    : navItems;
+  const items = isAdmin ? adminNavItems : navItems;
 
   return (
     <nav ref={ref} {...props} className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
