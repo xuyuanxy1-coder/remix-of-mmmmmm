@@ -12,6 +12,14 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   en: {
     // Common
+    'common.notifications': 'Notifications',
+    'common.markAllRead': 'Mark all read',
+    'common.clear': 'Clear',
+    'common.noNotifications': 'No notifications',
+    'common.justNow': 'Just now',
+    'common.minutesAgo': '{minutes} minutes ago',
+    'common.hoursAgo': '{hours} hours ago',
+    'common.daysAgo': '{days} days ago',
     'common.loading': 'Loading...',
     'common.save': 'Save',
     'common.cancel': 'Cancel',
@@ -407,9 +415,25 @@ const translations: Record<Language, Record<string, string>> = {
     'kyc.pleaseUploadId': 'Please upload your ID document',
     'kyc.submittedWaitApproval': 'Identity verification submitted. Please wait for approval.',
     
+    // Notifications
+    'notification.loanSoonDue.title': 'Loan Due Soon',
+    'notification.loanSoonDue.message': 'You have a {amount} {currency} loan entering the interest period in {days} days. Please repay on time to avoid interest.',
+    'notification.loanTomorrow.title': '⚠️ Loan Due Tomorrow',
+    'notification.loanTomorrow.message': 'You have a {amount} {currency} loan entering the interest period tomorrow. Please repay as soon as possible!',
+    'notification.loanOverdue.title': '🚨 Loan Overdue',
+    'notification.loanOverdue.message': 'You have a {amount} {currency} loan that is {days} days overdue and accruing interest. Please repay immediately!',
+    
   },
   zh: {
     // Common
+    'common.notifications': '通知',
+    'common.markAllRead': '全部已读',
+    'common.clear': '清空',
+    'common.noNotifications': '暂无通知',
+    'common.justNow': '刚刚',
+    'common.minutesAgo': '{minutes} 分钟前',
+    'common.hoursAgo': '{hours} 小时前',
+    'common.daysAgo': '{days} 天前',
     'common.loading': '加载中...',
     'common.save': '保存',
     'common.cancel': '取消',
@@ -855,9 +879,25 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmNewPassword': '确认新密码',
     'admin.passwordMinLength': '密码至少需要6个字符',
     'admin.passwordMismatch': '两次密码不一致',
+    
+    // Notifications
+    'notification.loanSoonDue.title': '贷款即将到期提醒',
+    'notification.loanSoonDue.message': '您有一笔 {amount} {currency} 的贷款将在 {days} 天后进入计息期。请及时还款以避免产生利息。',
+    'notification.loanTomorrow.title': '⚠️ 贷款明天到期',
+    'notification.loanTomorrow.message': '您有一笔 {amount} {currency} 的贷款将于明天进入计息期。请尽快还款！',
+    'notification.loanOverdue.title': '🚨 贷款已逾期',
+    'notification.loanOverdue.message': '您有一笔 {amount} {currency} 的贷款已逾期 {days} 天，正在产生利息。请立即还款！',
   },
   es: {
     // Common
+    'common.notifications': 'Notificaciones',
+    'common.markAllRead': 'Marcar todo leído',
+    'common.clear': 'Limpiar',
+    'common.noNotifications': 'Sin notificaciones',
+    'common.justNow': 'Ahora mismo',
+    'common.minutesAgo': 'Hace {minutes} minutos',
+    'common.hoursAgo': 'Hace {hours} horas',
+    'common.daysAgo': 'Hace {days} días',
     'common.loading': 'Cargando...',
     'common.save': 'Guardar',
     'common.cancel': 'Cancelar',
@@ -1210,9 +1250,25 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmNewPassword': 'Confirmar nueva contraseña',
     'admin.passwordMinLength': 'La contraseña debe tener al menos 6 caracteres',
     'admin.passwordMismatch': 'Las contraseñas no coinciden',
+    
+    // Notifications
+    'notification.loanSoonDue.title': 'Préstamo próximo a vencer',
+    'notification.loanSoonDue.message': 'Tiene un préstamo de {amount} {currency} que entrará en período de intereses en {days} días. Por favor, pague a tiempo para evitar intereses.',
+    'notification.loanTomorrow.title': '⚠️ Préstamo vence mañana',
+    'notification.loanTomorrow.message': 'Tiene un préstamo de {amount} {currency} que entrará en período de intereses mañana. ¡Por favor, pague lo antes posible!',
+    'notification.loanOverdue.title': '🚨 Préstamo vencido',
+    'notification.loanOverdue.message': 'Tiene un préstamo de {amount} {currency} con {days} días de atraso, acumulando intereses. ¡Por favor, pague inmediatamente!',
   },
   hi: {
     // Common
+    'common.notifications': 'सूचनाएं',
+    'common.markAllRead': 'सभी पढ़ा हुआ करें',
+    'common.clear': 'साफ़ करें',
+    'common.noNotifications': 'कोई सूचना नहीं',
+    'common.justNow': 'अभी',
+    'common.minutesAgo': '{minutes} मिनट पहले',
+    'common.hoursAgo': '{hours} घंटे पहले',
+    'common.daysAgo': '{days} दिन पहले',
     'common.loading': 'लोड हो रहा है...',
     'common.save': 'सहेजें',
     'common.cancel': 'रद्द करें',
@@ -1565,9 +1621,25 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmNewPassword': 'नए पासवर्ड की पुष्टि करें',
     'admin.passwordMinLength': 'पासवर्ड कम से कम 6 अक्षर का होना चाहिए',
     'admin.passwordMismatch': 'पासवर्ड मेल नहीं खाते',
+    
+    // Notifications
+    'notification.loanSoonDue.title': 'ऋण जल्द देय है',
+    'notification.loanSoonDue.message': 'आपके पास {amount} {currency} का ऋण है जो {days} दिनों में ब्याज अवधि में प्रवेश करेगा। ब्याज से बचने के लिए कृपया समय पर भुगतान करें।',
+    'notification.loanTomorrow.title': '⚠️ ऋण कल देय है',
+    'notification.loanTomorrow.message': 'आपके पास {amount} {currency} का ऋण है जो कल ब्याज अवधि में प्रवेश करेगा। कृपया जल्द से जल्द भुगतान करें!',
+    'notification.loanOverdue.title': '🚨 ऋण अतिदेय',
+    'notification.loanOverdue.message': 'आपके पास {amount} {currency} का ऋण {days} दिनों से अतिदेय है और ब्याज जमा हो रहा है। कृपया तुरंत भुगतान करें!',
   },
   fr: {
     // Common
+    'common.notifications': 'Notifications',
+    'common.markAllRead': 'Tout marquer lu',
+    'common.clear': 'Effacer',
+    'common.noNotifications': 'Aucune notification',
+    'common.justNow': 'À l\'instant',
+    'common.minutesAgo': 'Il y a {minutes} minutes',
+    'common.hoursAgo': 'Il y a {hours} heures',
+    'common.daysAgo': 'Il y a {days} jours',
     'common.loading': 'Chargement...',
     'common.save': 'Enregistrer',
     'common.cancel': 'Annuler',
@@ -1920,9 +1992,25 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmNewPassword': 'Confirmer le nouveau mot de passe',
     'admin.passwordMinLength': 'Le mot de passe doit comporter au moins 6 caractères',
     'admin.passwordMismatch': 'Les mots de passe ne correspondent pas',
+    
+    // Notifications
+    'notification.loanSoonDue.title': 'Prêt bientôt dû',
+    'notification.loanSoonDue.message': 'Vous avez un prêt de {amount} {currency} qui entrera en période d\'intérêts dans {days} jours. Veuillez rembourser à temps pour éviter les intérêts.',
+    'notification.loanTomorrow.title': '⚠️ Prêt dû demain',
+    'notification.loanTomorrow.message': 'Vous avez un prêt de {amount} {currency} qui entrera en période d\'intérêts demain. Veuillez rembourser dès que possible!',
+    'notification.loanOverdue.title': '🚨 Prêt en retard',
+    'notification.loanOverdue.message': 'Vous avez un prêt de {amount} {currency} en retard de {days} jours, accumulant des intérêts. Veuillez rembourser immédiatement!',
   },
   ar: {
     // Common
+    'common.notifications': 'الإشعارات',
+    'common.markAllRead': 'تعليم الكل كمقروء',
+    'common.clear': 'مسح',
+    'common.noNotifications': 'لا توجد إشعارات',
+    'common.justNow': 'الآن',
+    'common.minutesAgo': 'منذ {minutes} دقيقة',
+    'common.hoursAgo': 'منذ {hours} ساعة',
+    'common.daysAgo': 'منذ {days} يوم',
     'common.loading': 'جاري التحميل...',
     'common.save': 'حفظ',
     'common.cancel': 'إلغاء',
@@ -2275,6 +2363,14 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmNewPassword': 'تأكيد كلمة المرور الجديدة',
     'admin.passwordMinLength': 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل',
     'admin.passwordMismatch': 'كلمات المرور غير متطابقة',
+    
+    // Notifications
+    'notification.loanSoonDue.title': 'القرض يستحق قريباً',
+    'notification.loanSoonDue.message': 'لديك قرض بقيمة {amount} {currency} سيدخل فترة الفائدة خلال {days} أيام. يرجى السداد في الوقت المحدد لتجنب الفوائد.',
+    'notification.loanTomorrow.title': '⚠️ القرض يستحق غداً',
+    'notification.loanTomorrow.message': 'لديك قرض بقيمة {amount} {currency} سيدخل فترة الفائدة غداً. يرجى السداد في أقرب وقت!',
+    'notification.loanOverdue.title': '🚨 القرض متأخر',
+    'notification.loanOverdue.message': 'لديك قرض بقيمة {amount} {currency} متأخر لمدة {days} أيام ويتراكم عليه فائدة. يرجى السداد فوراً!',
   },
 };
 

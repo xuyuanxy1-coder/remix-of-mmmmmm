@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Bell, X, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { useNotification } from '@/contexts/NotificationContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -19,7 +20,17 @@ const NotificationBell = () => {
     clearNotification,
     clearAllNotifications 
   } = useNotification();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+
+  // Helper function to replace placeholders in translated strings
+  const formatMessage = (template: string, values: Record<string, string | number>) => {
+    let result = template;
+    Object.entries(values).forEach(([key, value]) => {
+      result = result.replace(`{${key}}`, String(value));
+    });
+    return result;
+  };
 
   const formatTime = (date: Date) => {
     const now = new Date();
@@ -28,10 +39,10 @@ const NotificationBell = () => {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return '刚刚';
-    if (minutes < 60) return `${minutes} 分钟前`;
-    if (hours < 24) return `${hours} 小时前`;
-    return `${days} 天前`;
+    if (minutes < 1) return t('common.justNow');
+    if (minutes < 60) return formatMessage(t('common.minutesAgo'), { minutes });
+    if (hours < 24) return formatMessage(t('common.hoursAgo'), { hours });
+    return formatMessage(t('common.daysAgo'), { days });
   };
 
   const getNotificationIcon = (type: string) => {
@@ -59,7 +70,7 @@ const NotificationBell = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between p-3 border-b">
-          <h4 className="font-semibold">通知</h4>
+          <h4 className="font-semibold">{t('common.notifications')}</h4>
           <div className="flex gap-1">
             {unreadCount > 0 && (
               <Button 
@@ -69,7 +80,7 @@ const NotificationBell = () => {
                 className="h-8 text-xs"
               >
                 <CheckCheck className="h-3 w-3 mr-1" />
-                全部已读
+                {t('common.markAllRead')}
               </Button>
             )}
             {notifications.length > 0 && (
@@ -80,7 +91,7 @@ const NotificationBell = () => {
                 className="h-8 text-xs text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-3 w-3 mr-1" />
-                清空
+                {t('common.clear')}
               </Button>
             )}
           </div>
@@ -90,7 +101,7 @@ const NotificationBell = () => {
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
               <Bell className="h-10 w-10 mb-2 opacity-50" />
-              <p className="text-sm">暂无通知</p>
+              <p className="text-sm">{t('common.noNotifications')}</p>
             </div>
           ) : (
             <div className="divide-y">

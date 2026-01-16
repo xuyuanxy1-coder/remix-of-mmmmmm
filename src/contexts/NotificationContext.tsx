@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useLoan, Loan } from './LoanContext';
+import { useLanguage } from './LanguageContext';
 
 export interface Notification {
   id: string;
@@ -26,6 +27,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [checkedLoans, setCheckedLoans] = useState<Set<string>>(new Set());
   const { loans } = useLoan();
+  const { t } = useLanguage();
+
+  // Helper function to replace placeholders in translated strings
+  const formatMessage = (template: string, values: Record<string, string | number>) => {
+    let result = template;
+    Object.entries(values).forEach(([key, value]) => {
+      result = result.replace(`{${key}}`, String(value));
+    });
+    return result;
+  };
 
   const checkLoanReminders = useCallback(() => {
     const now = new Date();
@@ -45,8 +56,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         const notification: Notification = {
           id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           type: 'loan_reminder',
-          title: '贷款即将到期提醒',
-          message: `您有一笔 ${loan.amount.toLocaleString()} ${loan.currency} 的贷款将在 ${daysUntilDue} 天后进入计息期。请及时还款以避免产生利息。`,
+          title: t('notification.loanSoonDue.title'),
+          message: formatMessage(t('notification.loanSoonDue.message'), {
+            amount: loan.amount.toLocaleString(),
+            currency: loan.currency,
+            days: daysUntilDue
+          }),
           createdAt: new Date(),
           read: false,
           loanId: loan.id
@@ -61,8 +76,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         const notification: Notification = {
           id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           type: 'loan_reminder',
-          title: '⚠️ 贷款明天到期',
-          message: `您有一笔 ${loan.amount.toLocaleString()} ${loan.currency} 的贷款将于明天进入计息期。请尽快还款！`,
+          title: t('notification.loanTomorrow.title'),
+          message: formatMessage(t('notification.loanTomorrow.message'), {
+            amount: loan.amount.toLocaleString(),
+            currency: loan.currency
+          }),
           createdAt: new Date(),
           read: false,
           loanId: loan.id
@@ -77,8 +95,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         const notification: Notification = {
           id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           type: 'loan_reminder',
-          title: '🚨 贷款已逾期',
-          message: `您有一笔 ${loan.amount.toLocaleString()} ${loan.currency} 的贷款已逾期 ${Math.abs(daysUntilDue)} 天，正在产生利息。请立即还款！`,
+          title: t('notification.loanOverdue.title'),
+          message: formatMessage(t('notification.loanOverdue.message'), {
+            amount: loan.amount.toLocaleString(),
+            currency: loan.currency,
+            days: Math.abs(daysUntilDue)
+          }),
           createdAt: new Date(),
           read: false,
           loanId: loan.id
@@ -87,7 +109,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         setCheckedLoans(prev => new Set(prev).add(overdueKey));
       }
     });
-  }, [loans, checkedLoans]);
+  }, [loans, checkedLoans, t]);
 
   useEffect(() => {
     checkLoanReminders();
