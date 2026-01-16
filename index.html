@@ -21,5 +21,107 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Disable right-click context menu
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+      });
+
+      // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+Shift+C
+      document.addEventListener('keydown', function(e) {
+        // F12
+        if (e.keyCode === 123) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+Shift+I (Chrome DevTools)
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+Shift+J (Chrome Console)
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 74) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+Shift+C (Chrome Inspect Element)
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 67) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+U (View Source)
+        if (e.ctrlKey && e.keyCode === 85) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+S (Save Page)
+        if (e.ctrlKey && e.keyCode === 83) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+P (Print - can be used to view source)
+        if (e.ctrlKey && e.keyCode === 80) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+Shift+I (Alternative)
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+Shift+K (Firefox Console)
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 75) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      // Disable text selection (optional - uncomment if needed)
+      // document.addEventListener('selectstart', function(e) {
+      //   e.preventDefault();
+      //   return false;
+      // });
+
+      // Disable drag
+      document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+      });
+
+      // Detect and prevent DevTools opening
+      let devtools = {open: false};
+      const element = new Image();
+      Object.defineProperty(element, 'id', {
+        get: function() {
+          devtools.open = true;
+          document.body.innerHTML = 'Developer tools detected!';
+        }
+      });
+      
+      setInterval(function() {
+        devtools.open = false;
+        console.log(element);
+        if (devtools.open) {
+          document.body.innerHTML = 'Developer tools detected!';
+        }
+      }, 500);
+
+      // Prevent common debugging methods
+      (function() {
+        function disableDevTools() {
+          if (window.console && window.console.log) {
+            const noop = function() {};
+            window.console.log = noop;
+            window.console.info = noop;
+            window.console.warn = noop;
+            window.console.error = noop;
+            window.console.debug = noop;
+          }
+        }
+        disableDevTools();
+        setInterval(disableDevTools, 1000);
+      })();
+    </script>
   </body>
 </html>
