@@ -89,6 +89,7 @@ export type Database = {
           status: Database["public"]["Enums"]["kyc_status"]
           updated_at: string
           user_id: string
+          verification_level: string
         }
         Insert: {
           back_image_url?: string | null
@@ -104,6 +105,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["kyc_status"]
           updated_at?: string
           user_id: string
+          verification_level?: string
         }
         Update: {
           back_image_url?: string | null
@@ -119,6 +121,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["kyc_status"]
           updated_at?: string
           user_id?: string
+          verification_level?: string
         }
         Relationships: []
       }
@@ -224,6 +227,54 @@ export type Database = {
           repaid_at?: string | null
           status?: Database["public"]["Enums"]["loan_status"]
           term_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mining_investments: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          daily_rate: number
+          end_date: string | null
+          id: string
+          lock_days: number
+          start_date: string | null
+          status: string
+          tier: number
+          total_earnings: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          daily_rate: number
+          end_date?: string | null
+          id?: string
+          lock_days: number
+          start_date?: string | null
+          status?: string
+          tier: number
+          total_earnings?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          daily_rate?: number
+          end_date?: string | null
+          id?: string
+          lock_days?: number
+          start_date?: string | null
+          status?: string
+          tier?: number
+          total_earnings?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -425,11 +476,16 @@ export type Database = {
         Args: { _email?: string; _username?: string; _wallet_address?: string }
         Returns: undefined
       }
+      get_user_total_deposits: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      settle_mining_investment: {
+        Args: { p_investment_id: string }
         Returns: boolean
       }
     }

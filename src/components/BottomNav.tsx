@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BarChart3, TrendingUp, Landmark, User, Shield } from 'lucide-react';
+import { Home, BarChart3, TrendingUp, Landmark, User, Shield, Pickaxe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -14,7 +14,7 @@ const BottomNav = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((pr
     { label: t('nav.market'), href: '/market', icon: BarChart3 },
     { label: t('nav.trade'), href: '/trade/BTC', icon: TrendingUp },
     { label: t('nav.loan'), href: '/loan', icon: Landmark },
-    { label: t('nav.account'), href: '/account', icon: User },
+    { label: 'Mining', href: '/mining', icon: Pickaxe },
   ];
 
   const isActive = (href: string) => {

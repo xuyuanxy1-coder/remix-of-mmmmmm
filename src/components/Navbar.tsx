@@ -20,6 +20,7 @@ const Navbar = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props
     { label: t('nav.market'), href: '/market' },
     { label: t('nav.smartTrading'), href: '/trade/BTC' },
     { label: t('nav.loan'), href: '/loan' },
+    { label: 'Mining', href: '/mining' },
     { label: t('nav.account'), href: '/account' },
   ];
 
