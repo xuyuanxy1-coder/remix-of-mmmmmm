@@ -3,19 +3,69 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/image.png" />
-    <title>MMTrade</title>
-    <meta name="description" content="MMTrade - Buy, trade, and hold cryptocurrencies" />
-    <meta name="author" content="MMTrade" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/image.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/image.png" />
+    <link rel="shortcut icon" type="image/png" href="/image.png" />
+    <link rel="apple-touch-icon" href="/image.png" />
+    <title>MetaMaskTrade</title>
+    <meta name="description" content="MetaMaskTrade - Buy, trade, and hold cryptocurrencies" />
+    <meta name="author" content="MetaMaskTrade" />
 
-    <meta property="og:title" content="MMTrade" />
-    <meta property="og:description" content="MMTrade - Buy, trade, and hold cryptocurrencies" />
+    <!-- Open Graph / Facebook - Update YOUR-DOMAIN.com with your actual domain after deployment -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/image.png" />
+    <meta property="og:title" content="MetaMaskTrade" />
+    <meta property="og:description" content="MetaMaskTrade - Buy, trade, and hold cryptocurrencies" />
+    <meta property="og:image" content="https://YOUR-DOMAIN.com/image.png" id="og-image-tag" />
+    <meta property="og:image:secure_url" content="https://YOUR-DOMAIN.com/image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MetaMaskTrade Logo" />
+    <meta property="og:url" content="https://YOUR-DOMAIN.com" id="og-url-tag" />
+    <meta property="og:site_name" content="MetaMaskTrade" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@MMTrade" />
-    <meta name="twitter:image" content="/image.png" />
+    <meta name="twitter:title" content="MetaMaskTrade" />
+    <meta name="twitter:description" content="MetaMaskTrade - Buy, trade, and hold cryptocurrencies" />
+    <meta name="twitter:site" content="@MetaMaskTrade" />
+    <meta name="twitter:image" content="https://YOUR-DOMAIN.com/image.png" id="twitter-image-tag" />
+    <meta name="twitter:image:alt" content="MetaMaskTrade Logo" />
+    
+    <script>
+      // Set absolute URLs dynamically based on current domain
+      // This works for browsers, but social media crawlers need absolute URLs in the HTML
+      // IMPORTANT: After deployment, replace "YOUR-DOMAIN.com" with your actual domain in the meta tags above
+      (function() {
+        try {
+          const baseUrl = window.location.origin;
+          const imageUrl = baseUrl + '/image.png';
+          const currentUrl = baseUrl + window.location.pathname;
+          
+          // Update meta tags
+          const ogImage = document.getElementById('og-image-tag');
+          const ogUrl = document.getElementById('og-url-tag');
+          const twitterImage = document.getElementById('twitter-image-tag');
+          
+          if (ogImage && ogImage.getAttribute('content').includes('YOUR-DOMAIN.com')) {
+            ogImage.setAttribute('content', imageUrl);
+            ogImage.setAttribute('content', imageUrl); // og:image:secure_url
+            const secureUrl = document.querySelector('meta[property="og:image:secure_url"]');
+            if (secureUrl) secureUrl.setAttribute('content', imageUrl);
+          }
+          
+          if (ogUrl && ogUrl.getAttribute('content').includes('YOUR-DOMAIN.com')) {
+            ogUrl.setAttribute('content', currentUrl);
+          }
+          
+          if (twitterImage && twitterImage.getAttribute('content').includes('YOUR-DOMAIN.com')) {
+            twitterImage.setAttribute('content', imageUrl);
+          }
+        } catch(e) {
+          console.error('Error setting meta tags:', e);
+        }
+      })();
+    </script>
   </head>
 
   <body>

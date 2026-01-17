@@ -228,7 +228,7 @@ const Auth = () => {
         <div className="container mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <MetaMaskLogo size={32} />
-            <span className="font-display font-semibold text-lg">MMTrade</span>
+            <span className="font-display font-semibold text-lg">MetaMaskTrade</span>
           </Link>
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             ← Back to Home
@@ -249,7 +249,7 @@ const Auth = () => {
               </div>
               <h1 className="text-4xl lg:text-5xl font-display font-bold leading-tight">
                 {mode === 'login' 
-                  ? 'Welcome Back to MMTrade' 
+                  ? 'Welcome Back to MetaMaskTrade' 
                   : 'Start Your Investment Journey'}
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -297,7 +297,7 @@ const Auth = () => {
               {/* Mobile Logo */}
               <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
                 <MetaMaskLogo size={40} />
-                <span className="font-display font-semibold text-xl">MMTrade</span>
+                <span className="font-display font-semibold text-xl">MetaMaskTrade</span>
               </div>
 
               <div className="text-center mb-8">

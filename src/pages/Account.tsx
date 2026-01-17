@@ -366,7 +366,7 @@ const Account = React.forwardRef<HTMLDivElement>((_, ref) => {
 
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-        <Link to="/" className="hover:text-foreground">MMTrade</Link>
+        <Link to="/" className="hover:text-foreground">MetaMaskTrade</Link>
         <ChevronRight className="w-4 h-4" />
         <button 
           onClick={() => setCurrentView('overview')}
@@ -421,7 +421,7 @@ const Account = React.forwardRef<HTMLDivElement>((_, ref) => {
               <Star className="w-3 h-3" />
               Credit Score
             </p>
-            <p className={`text-xl font-bold tabular-nums tracking-tight ${creditScore >= 100 ? 'text-[hsl(145,60%,45%)]' : 'text-[hsl(0,70%,55%)]'}`}>
+            <p className={`text-2xl font-semibold ${creditScore >= 100 ? 'text-[hsl(145,60%,45%)]' : 'text-[hsl(0,70%,55%)]'}`}>
               {creditScore}/100
             </p>
           </div>
